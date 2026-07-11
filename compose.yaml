@@ -1,0 +1,76 @@
+services:
+    app:
+        container_name: chit-app
+        build:
+            context: ./docker/app
+            args:
+                UID: ${APP_UID:-33}
+                GID: ${APP_GID:-33}
+        volumes:
+            - .:/var/www
+        networks:
+            - chit
+
+    nginx:
+        container_name: chit-nginx
+        image: nginx:stable
+        volumes:
+            - ./public:/var/www/public
+            - ./docker/nginx/app.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - app
+        networks:
+            - chit
+
+    database:
+        container_name: chit-database
+        image: postgres:17
+        environment:
+            POSTGRES_DB: ${DB_DATABASE:-chit}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+            POSTGRES_USER: ${DB_USERNAME:-app}
+            PGDATA: /pgdata
+        healthcheck:
+            test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB:-chit}", "-U", "${POSTGRES_USER:-app}" ]
+            timeout: 5s
+            retries: 3
+            start_period: 60s
+        volumes:
+            - chit-database:/pgdata:rw
+        networks:
+            - chit
+
+    redis:
+        container_name: chit-redis
+        image: redis:alpine
+        volumes:
+            - chit-redis:/data
+        healthcheck:
+            test: [ "CMD", "redis-cli", "ping" ]
+            retries: 3
+            timeout: 5s
+            start_period: 10s
+        networks:
+            - chit
+
+    frontend:
+        container_name: chit-frontend
+        image: node:22-alpine
+        working_dir: /app
+        volumes:
+            - ./src_frontend:/app
+        ports:
+            - "5173:5173"
+        command: sh -c "npm install && npm run dev"
+        networks:
+            - chit
+
+volumes:
+    chit-database:
+        driver: local
+    chit-redis:
+        driver: local
+
+networks:
+    chit:
+        driver: bridge
