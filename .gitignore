@@ -26,3 +26,4 @@ Thumbs.db
 /.config/
 /.local/
 /_ide_helper_models.php
+/.claude/
