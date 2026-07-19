@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\User\Actions;
 
+use Modules\User\Enums\UserRole;
 use Modules\User\Models\User;
 
 final class CreateUser
@@ -17,6 +18,7 @@ final class CreateUser
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
+            'role' => UserRole::User,
         ]);
     }
 }
