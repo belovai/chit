@@ -4,19 +4,19 @@ declare(strict_types=1);
 
 namespace Modules\User\Actions;
 
-use Illuminate\Contracts\Auth\Authenticatable;
 use Modules\User\Models\User;
 
 final class CreateUser
 {
-    public function handle(array $validated): Authenticatable
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    public function handle(array $validated): User
     {
-        $user = User::query()->create([
+        return User::query()->create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => $validated['password'],
         ]);
-
-        return $user->fresh();
     }
 }

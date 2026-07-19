@@ -4,18 +4,15 @@ includes:
 
 parameters:
 
-    scanFiles:
-        - _ide_helper_models.php
-
     paths:
         - app/
         - modules/
 
     # Level 10 is the highest level
-    level: 6
+    level: 8
 
 #    ignoreErrors:
 #        - '#PHPDoc tag @var#'
 #
-#    excludePaths:
-#        - ./*/*/FileToBeExcluded.php
+    excludePaths:
+        - modules/*/Tests/*

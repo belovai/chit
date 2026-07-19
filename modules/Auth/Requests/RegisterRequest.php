@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Modules\User\Requests;
+namespace Modules\Auth\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-final class CreateUserRequest extends FormRequest
+final class RegisterRequest extends FormRequest
 {
     /**
      * @return array<string, array<mixed>>

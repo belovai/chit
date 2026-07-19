@@ -12,21 +12,37 @@ use Illuminate\Pagination\AbstractPaginator;
 
 trait ApiResponses
 {
+    /**
+     * @param  array<array-key, mixed>|JsonResource  $data
+     * @param  array<array-key, mixed>  $meta
+     */
     public function ok(string $message = 'success', array|JsonResource $data = [], array $meta = []): JsonResponse
     {
         return $this->response($message, $data, 200, $meta);
     }
 
+    /**
+     * @param  array<array-key, mixed>|JsonResource  $data
+     * @param  array<array-key, mixed>  $meta
+     */
     public function created(string $message = 'success', array|JsonResource $data = [], array $meta = []): JsonResponse
     {
         return $this->response($message, $data, 201, $meta);
     }
 
+    /**
+     * @param  array<array-key, mixed>|JsonResource  $data
+     * @param  array<array-key, mixed>  $meta
+     */
     public function error(string $message, array|JsonResource $data = [], int $statusCode = 400, array $meta = []): JsonResponse
     {
         return $this->response($message, $data, $statusCode, $meta);
     }
 
+    /**
+     * @param  array<array-key, mixed>|JsonResource  $data
+     * @param  array<array-key, mixed>  $meta
+     */
     public function response(string $message, array|JsonResource $data = [], int $statusCode = 200, array $meta = []): JsonResponse
     {
         $isPaginated = $data instanceof ResourceCollection

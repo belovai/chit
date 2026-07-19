@@ -8,10 +8,13 @@ use Modules\User\Models\User;
 
 final class UpdateUser
 {
+    /**
+     * @param  array<string, mixed>  $validated
+     */
     public function handle(User $user, array $validated): User
     {
         $user->update($validated);
 
-        return $user->fresh();
+        return $user->refresh();
     }
 }
