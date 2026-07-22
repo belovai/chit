@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "[pre-commit] ide-helper:models"
+docker compose exec -T php php artisan ide-helper:models -RW --no-interaction
+
+echo "[pre-commit] pint"
+docker compose exec -T php bash -c "./vendor/bin/pint"
+
+echo "[pre-commit] phpstan"
+docker compose exec -T php ./vendor/bin/phpstan analyse --memory-limit=2G
+
+git add -u
