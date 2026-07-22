@@ -15,14 +15,30 @@ use Modules\Merchant\Database\Factories\MerchantFactory;
 use Modules\User\Models\User;
 
 /**
+ * @property int $id
+ * @property string $hash_id
+ * @property int $owner_id
+ * @property string $name
+ * @property Carbon|null $deleted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  * @property-read User|null $owner
+ *
  * @method static \Modules\Merchant\Database\Factories\MerchantFactory factory($count = null, $state = [])
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant newModelQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant whereCreatedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant whereDeletedAt($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant whereHashId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant whereId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant whereName($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant whereOwnerId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|Merchant withoutTrashed()
+ *
  * @mixin \Eloquent
  */
 #[Fillable(
