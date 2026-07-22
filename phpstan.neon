@@ -11,6 +11,10 @@ parameters:
     # Level 10 is the highest level
     level: 8
 
+    configDirectories:
+        - config
+        - modules/*/Config
+
 #    ignoreErrors:
 #        - '#PHPDoc tag @var#'
 #

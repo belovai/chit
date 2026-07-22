@@ -38,6 +38,7 @@ services:
             start_period: 60s
         volumes:
             - chit-database:/pgdata:rw
+            - ./docker/postgres/init-test-db.sh:/docker-entrypoint-initdb.d/init-test-db.sh:ro
         networks:
             - chit
 
