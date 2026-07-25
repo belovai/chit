@@ -6,7 +6,47 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: { name: 'dashboard' },
+      component: () => import('../components/layout/AppShell.vue'),
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: '',
+          name: 'dashboard',
+          component: () => import('../views/DashboardView.vue'),
+        },
+        {
+          path: 'receipts',
+          name: 'receipts',
+          component: () => import('../views/ReceiptsView.vue'),
+        },
+        {
+          path: 'transactions',
+          name: 'transactions',
+          component: () => import('../views/TransactionsView.vue'),
+        },
+        {
+          path: 'settings',
+          component: () => import('../views/settings/SettingsLayoutView.vue'),
+          children: [
+            { path: '', redirect: { name: 'settings-profile' } },
+            {
+              path: 'profile',
+              name: 'settings-profile',
+              component: () => import('../views/settings/SettingsProfileView.vue'),
+            },
+            {
+              path: 'merchants',
+              name: 'settings-merchants',
+              component: () => import('../views/settings/SettingsMerchantsView.vue'),
+            },
+            {
+              path: 'tags',
+              name: 'settings-tags',
+              component: () => import('../views/settings/SettingsTagsView.vue'),
+            },
+          ],
+        },
+      ],
     },
     {
       path: '/login',
@@ -19,12 +59,6 @@ const router = createRouter({
       name: 'register',
       component: () => import('../views/RegisterView.vue'),
       meta: { guestOnly: true },
-    },
-    {
-      path: '/dashboard',
-      name: 'dashboard',
-      component: () => import('../views/DashboardView.vue'),
-      meta: { requiresAuth: true },
     },
   ],
 })

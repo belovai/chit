@@ -3,7 +3,7 @@ import { defineComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 export default defineComponent({
-  name: 'DashboardView',
+  name: 'SettingsMerchantsView',
 
   setup() {
     const { t } = useI18n()
@@ -14,6 +14,6 @@ export default defineComponent({
 
 <template>
   <div class="border border-divider bg-surface p-6 text-sm text-neutral-600">
-    {{ t('dashboard.placeholder') }}
+    {{ t('settingsNav.merchantsPlaceholder') }}
   </div>
 </template>
