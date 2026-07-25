@@ -43,6 +43,31 @@ final class RegisterTest extends TestCase
         ]);
 
         $response->assertUnprocessable();
-        $response->assertJsonValidationErrors('email');
+        $response->assertJsonPath('errors.email.0', 'unique');
+    }
+
+    #[Test]
+    public function register_requires_name_and_returns_generic_required_code(): void
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'email' => 'ada@example.com',
+            'password' => 'correct-horse-battery-staple',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('errors.name.0', 'required');
+    }
+
+    #[Test]
+    public function register_rejects_short_password_with_specific_code(): void
+    {
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Ada Lovelace',
+            'email' => 'ada@example.com',
+            'password' => 'short',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('errors.password.0', 'auth.password_too_short');
     }
 }

@@ -1,1 +1,93 @@
 @import 'tailwindcss';
+
+/* Terra design tokens — see /design/terra-tokens.css (.scope-terra) for source values. */
+@theme {
+  --font-heading: 'Barlow Condensed', system-ui, sans-serif;
+  --font-body: 'Barlow', system-ui, sans-serif;
+
+  --color-bg: #f2efe8;
+  --color-surface: #e9e4d8;
+  --color-text: #20211d;
+  --color-divider: color-mix(in srgb, #20211d 16%, transparent);
+
+  --color-neutral-100: #f7f5f0;
+  --color-neutral-200: #e9e6dd;
+  --color-neutral-300: #d6d2c5;
+  --color-neutral-400: #b8b3a1;
+  --color-neutral-500: #99927d;
+  --color-neutral-600: #7a745f;
+  --color-neutral-700: #5c5747;
+  --color-neutral-800: #413d31;
+  --color-neutral-900: #2a271f;
+
+  --color-accent-100: oklch(95% 0.02 200);
+  --color-accent-200: oklch(88% 0.04 200);
+  --color-accent-300: oklch(78% 0.06 200);
+  --color-accent-400: oklch(65% 0.07 200);
+  --color-accent-500: oklch(46% 0.075 200);
+  --color-accent-600: oklch(38% 0.07 200);
+  --color-accent-700: oklch(30% 0.06 200);
+  --color-accent-800: oklch(22% 0.045 200);
+  --color-accent-900: oklch(15% 0.03 200);
+  --color-accent: var(--color-accent-500);
+
+  --color-accent2-100: oklch(96% 0.02 45);
+  --color-accent2-200: oklch(90% 0.05 45);
+  --color-accent2-300: oklch(81% 0.08 45);
+  --color-accent2-400: oklch(70% 0.1 45);
+  --color-accent2-500: oklch(58% 0.11 45);
+  --color-accent2-600: oklch(48% 0.1 45);
+  --color-accent2-700: oklch(38% 0.085 45);
+  --color-accent2-800: oklch(28% 0.06 45);
+  --color-accent2-900: oklch(19% 0.04 45);
+  --color-accent2: var(--color-accent2-500);
+
+  --color-danger: oklch(53% 0.16 27);
+  --color-danger-100: oklch(94% 0.03 27);
+  --color-danger-700: oklch(38% 0.13 27);
+
+  --color-warning: oklch(68% 0.14 75);
+  --color-warning-100: oklch(95% 0.035 75);
+  --color-warning-700: oklch(45% 0.1 75);
+
+  --color-info: oklch(56% 0.07 250);
+  --color-info-100: oklch(94% 0.02 250);
+  --color-info-700: oklch(38% 0.06 250);
+
+  --color-success: oklch(55% 0.11 150);
+  --color-success-100: oklch(94% 0.025 150);
+  --color-success-700: oklch(38% 0.09 150);
+
+  --radius-none: 0px;
+}
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+    line-height: 1.12;
+  }
+
+  /* Terra direction: square corners everywhere, no border-radius utilities used. */
+  input,
+  button,
+  select,
+  textarea {
+    border-radius: 0;
+    font-family: inherit;
+  }
+}

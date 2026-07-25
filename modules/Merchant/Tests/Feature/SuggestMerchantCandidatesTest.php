@@ -71,5 +71,6 @@ final class SuggestMerchantCandidatesTest extends TestCase
             ->getJson('/api/merchants/suggest');
 
         $response->assertUnprocessable();
+        $response->assertJsonPath('errors.query.0', 'required');
     }
 }

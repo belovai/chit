@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Merchant\Requests;
 
+use App\Traits\HasCodedValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Merchant\Models\Merchant;
 use Modules\User\Models\User;
 
 final class UpdateMerchantRequest extends FormRequest
 {
+    use HasCodedValidationMessages;
+
     /**
      * @return array<string, array<mixed>>
      */
@@ -34,10 +37,18 @@ final class UpdateMerchantRequest extends FormRequest
                         ->exists();
 
                     if ($exists) {
-                        $fail('A kereskedő ezzel a névvel már létezik.');
+                        $fail('merchant.duplicate_name');
                     }
                 },
             ],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->codedValidationMessages();
     }
 }

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Merchant\Requests;
 
+use App\Traits\HasCodedValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class SuggestMerchantCandidatesRequest extends FormRequest
 {
+    use HasCodedValidationMessages;
+
     /**
      * @return array<string, array<mixed>>
      */
@@ -16,5 +19,13 @@ final class SuggestMerchantCandidatesRequest extends FormRequest
         return [
             'query' => ['required', 'string', 'max:255'],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->codedValidationMessages();
     }
 }

@@ -41,7 +41,7 @@ final class MerchantUpdateTest extends TestCase
             ->putJson("/api/merchants/{$merchant->hash_id}", ['name' => 'lidl']);
 
         $response->assertUnprocessable();
-        $response->assertJsonValidationErrors('name');
+        $response->assertJsonPath('errors.name.0', 'merchant.duplicate_name');
     }
 
     #[Test]

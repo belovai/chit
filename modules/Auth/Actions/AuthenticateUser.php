@@ -17,7 +17,7 @@ final class AuthenticateUser
 
         if (!$user || !Hash::check($password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['These credentials do not match our records.'],
+                'email' => ['auth.invalid_credentials'],
             ]);
         }
 

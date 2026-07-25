@@ -39,7 +39,7 @@ final class MerchantStoreTest extends TestCase
             ->postJson('/api/merchants', ['name' => 'omv']);
 
         $response->assertUnprocessable();
-        $response->assertJsonValidationErrors('name');
+        $response->assertJsonPath('errors.name.0', 'merchant.duplicate_name');
     }
 
     #[Test]

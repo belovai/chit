@@ -40,7 +40,7 @@ final class LoginTest extends TestCase
         ]);
 
         $response->assertUnprocessable();
-        $response->assertJsonValidationErrors('email');
+        $response->assertJsonPath('errors.email.0', 'auth.invalid_credentials');
     }
 
     #[Test]
@@ -52,6 +52,17 @@ final class LoginTest extends TestCase
         ]);
 
         $response->assertUnprocessable();
-        $response->assertJsonValidationErrors('email');
+        $response->assertJsonPath('errors.email.0', 'auth.invalid_credentials');
+    }
+
+    #[Test]
+    public function login_requires_email_and_returns_generic_required_code(): void
+    {
+        $response = $this->postJson('/api/auth/login', [
+            'password' => 'password',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('errors.email.0', 'required');
     }
 }

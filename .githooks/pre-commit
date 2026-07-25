@@ -10,4 +10,12 @@ docker compose exec -T php bash -c "./vendor/bin/pint"
 echo "[pre-commit] phpstan"
 docker compose exec -T php ./vendor/bin/phpstan analyse --memory-limit=2G
 
+if git diff --cached --name-only --diff-filter=ACM | grep -q '^src_frontend/'; then
+  echo "[pre-commit] frontend lint"
+  docker compose exec -T node npm run lint
+
+  echo "[pre-commit] frontend format"
+  docker compose exec -T node npm run format
+fi
+
 git add -u
