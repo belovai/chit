@@ -7,6 +7,7 @@ namespace Modules\Merchant\Requests;
 use App\Traits\HasCodedValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Merchant\Models\Merchant;
+use Modules\Merchant\Rules\UniqueMerchantNameForOwnerRule;
 use Modules\User\Models\User;
 
 final class UpdateMerchantRequest extends FormRequest
@@ -20,26 +21,15 @@ final class UpdateMerchantRequest extends FormRequest
     {
         /** @var Merchant $merchant */
         $merchant = $this->route('merchant');
+        /** @var User $user */
+        $user = $this->user();
 
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
-                function (string $attribute, mixed $value, \Closure $fail) use ($merchant): void {
-                    /** @var User $user */
-                    $user = $this->user();
-
-                    $exists = Merchant::query()
-                        ->where('owner_id', $user->id)
-                        ->where('id', '!=', $merchant->id)
-                        ->whereRaw('lower(name) = lower(?)', [$value])
-                        ->exists();
-
-                    if ($exists) {
-                        $fail('merchant.duplicate_name');
-                    }
-                },
+                new UniqueMerchantNameForOwnerRule($user->id, $merchant->id),
             ],
         ];
     }

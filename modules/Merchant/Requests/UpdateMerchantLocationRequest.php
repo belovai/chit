@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\Merchant\Requests;
 
 use App\Traits\HasCodedValidationMessages;
-use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Merchant\Models\Merchant;
 use Modules\Merchant\Models\MerchantLocation;
+use Modules\Merchant\Rules\NoExistingOnlineLocationRule;
 
 final class UpdateMerchantLocationRequest extends FormRequest
 {
@@ -20,24 +20,16 @@ final class UpdateMerchantLocationRequest extends FormRequest
      */
     public function rules(): array
     {
+        /** @var MerchantLocation $merchantLocation */
+        $merchantLocation = $this->route('merchantLocation');
+        /** @var Merchant $merchant */
+        $merchant = $merchantLocation->merchant;
+
         return [
             'is_online' => [
                 'required',
                 'boolean',
-                function (string $attribute, mixed $value, Closure $fail): void {
-                    /** @var MerchantLocation $merchantLocation */
-                    $merchantLocation = $this->route('merchantLocation');
-                    /** @var Merchant $merchant */
-                    $merchant = $merchantLocation->merchant;
-                    $hasOtherOnlineLocation = $merchant
-                        ->locations()
-                        ->where('is_online', true)
-                        ->where('id', '!=', $merchantLocation->id)
-                        ->exists();
-                    if ($value && $hasOtherOnlineLocation) {
-                        $fail('merchants.onlineLocationExists');
-                    }
-                },
+                new NoExistingOnlineLocationRule($merchant, $merchantLocation->id),
             ],
             'address' => [
                 'nullable',
