@@ -12,6 +12,7 @@ import profile from './profile'
 import notifications from './notifications'
 import merchants from './merchants'
 import merchant from './merchant'
+import products from './products'
 
 export default {
   common,
@@ -28,4 +29,5 @@ export default {
   notifications,
   merchants,
   merchant,
+  products,
 }

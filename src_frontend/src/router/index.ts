@@ -50,6 +50,21 @@ const router = createRouter({
               component: () => import('../views/settings/SettingsMerchantEditView.vue'),
             },
             {
+              path: 'products',
+              name: 'settings-products',
+              component: () => import('../views/settings/SettingsProductsView.vue'),
+            },
+            {
+              path: 'products/new',
+              name: 'settings-product-new',
+              component: () => import('../views/settings/SettingsProductEditView.vue'),
+            },
+            {
+              path: 'products/:hashId',
+              name: 'settings-product-edit',
+              component: () => import('../views/settings/SettingsProductEditView.vue'),
+            },
+            {
               path: 'tags',
               name: 'settings-tags',
               component: () => import('../views/settings/SettingsTagsView.vue'),

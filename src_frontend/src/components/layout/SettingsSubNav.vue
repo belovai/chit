@@ -20,6 +20,7 @@ export default defineComponent({
       return [
         { name: 'settings-account', label: this.t('settingsNav.account') },
         { name: 'settings-merchants', label: this.t('settingsNav.merchants') },
+        { name: 'settings-products', label: this.t('settingsNav.products') },
         { name: 'settings-tags', label: this.t('settingsNav.tags') },
       ]
     },
