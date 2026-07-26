@@ -8,6 +8,7 @@ export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   body?: unknown
   token?: string | null
+  query?: Record<string, string | number>
 }
 
 interface ApiEnvelope<T> {
@@ -16,7 +17,32 @@ interface ApiEnvelope<T> {
   status: number
 }
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+interface PaginationMeta {
+  current_page: number
+  last_page: number
+}
+
+interface PaginatedEnvelope<T> extends ApiEnvelope<T[]> {
+  meta: PaginationMeta
+}
+
+export interface PaginatedResult<T> {
+  data: T[]
+  currentPage: number
+  lastPage: number
+}
+
+function buildUrl(path: string, query?: Record<string, string | number>): string {
+  if (!query) {
+    return `${API_BASE_URL}${path}`
+  }
+  const params = new URLSearchParams(
+    Object.fromEntries(Object.entries(query).map(([key, value]) => [key, String(value)])),
+  )
+  return `${API_BASE_URL}${path}?${params.toString()}`
+}
+
+async function performRequest(path: string, options: RequestOptions): Promise<unknown> {
   const headers: Record<string, string> = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -31,21 +57,24 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   // instead set `credentials: 'include'` below, plus fetch `/sanctum/csrf-cookie` once on
   // app boot and mirror the XSRF-TOKEN cookie into an X-XSRF-TOKEN header per request.
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(buildUrl(path, options.query), {
     method: options.method ?? 'GET',
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
     // credentials: 'include', // needed only for the cookie-based alternative above
   })
 
-  const payload = (await response.json().catch(() => null)) as
-    | ApiEnvelope<T>
-    | { message: string; errors?: Record<string, string[]> }
-    | null
+  const payload = await response.json().catch(() => null)
 
   if (!response.ok) {
-    const message = payload?.message ?? response.statusText
-    const errors = payload && 'errors' in payload ? payload.errors : undefined
+    const message =
+      payload && typeof payload === 'object' && 'message' in payload
+        ? (payload as { message: string }).message
+        : response.statusText
+    const errors =
+      payload && typeof payload === 'object' && 'errors' in payload
+        ? (payload as { errors?: Record<string, string[]> }).errors
+        : undefined
 
     if (response.status === 401 && router.currentRoute.value.name !== 'login') {
       useAuthStore().clear()
@@ -55,5 +84,28 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     throw new ApiError(message, response.status, errors)
   }
 
+  return payload
+}
+
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const payload = await performRequest(path, options)
   return (payload as ApiEnvelope<T>).data
+}
+
+// The backend's ApiResponses trait puts a paginated resource collection's items in `data`
+// (flat array) and the pagination info in a sibling `meta` object — not nested under `data`
+// (see app/Traits/ApiResponses.php: `resolved['data']` / `resolved['meta']` from Laravel's
+// standard ResourceCollection::response() shape).
+export async function apiRequestPaginated<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<PaginatedResult<T>> {
+  const payload = await performRequest(path, options)
+  const envelope = payload as PaginatedEnvelope<T>
+
+  return {
+    data: envelope.data,
+    currentPage: envelope.meta.current_page,
+    lastPage: envelope.meta.last_page,
+  }
 }

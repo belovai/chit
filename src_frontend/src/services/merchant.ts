@@ -5,6 +5,7 @@ import type {
   MerchantPayload,
   MerchantLocationPayload,
 } from '@/types/merchant'
+import type { MerchantMatch } from '@/types/transaction'
 
 export const merchantService = {
   list(token: string) {
@@ -56,5 +57,9 @@ export const merchantService = {
       method: 'DELETE',
       token,
     })
+  },
+
+  suggest(token: string, query: string) {
+    return apiRequest<MerchantMatch[]>('/api/merchants/suggest', { token, query: { query } })
   },
 }

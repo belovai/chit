@@ -34,6 +34,7 @@ final class TransactionController
                     ->where('owner_id', $user->id)
                     ->with(['merchant', 'location', 'items.product'])
                     ->latest('occurred_at')
+                    ->latest('id')
                     ->paginate(),
             ),
         );

@@ -27,9 +27,11 @@ export default defineComponent({
       this.isOpen = false
     },
     onSelect(action: UploadAction) {
-      // Receipt creation flow isn't built yet — this only closes the sheet.
-      void action
       this.close()
+      if (action === 'manual') {
+        this.$router.push({ name: 'transaction-new' })
+      }
+      // 'photo' / 'file': receipt upload flow isn't built yet, no-op.
     },
   },
 })

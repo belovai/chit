@@ -25,6 +25,21 @@ const router = createRouter({
           component: () => import('../views/TransactionsView.vue'),
         },
         {
+          path: 'transactions/new',
+          name: 'transaction-new',
+          component: () => import('../views/TransactionEditView.vue'),
+        },
+        {
+          path: 'transactions/:hashId',
+          name: 'transaction-detail',
+          component: () => import('../views/TransactionDetailView.vue'),
+        },
+        {
+          path: 'transactions/:hashId/edit',
+          name: 'transaction-edit',
+          component: () => import('../views/TransactionEditView.vue'),
+        },
+        {
           path: 'settings',
           component: () => import('../views/settings/SettingsLayoutView.vue'),
           children: [

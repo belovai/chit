@@ -1,5 +1,6 @@
 import { apiRequest } from '@/services/http'
 import type { Product, ProductPayload } from '@/types/product'
+import type { ProductMatch } from '@/types/transaction'
 
 export const productService = {
   list(token: string) {
@@ -20,5 +21,9 @@ export const productService = {
 
   destroy(token: string, hashId: string) {
     return apiRequest<void>(`/api/products/${hashId}`, { method: 'DELETE', token })
+  },
+
+  suggest(token: string, query: string) {
+    return apiRequest<ProductMatch[]>('/api/products/suggest', { token, query: { query } })
   },
 }

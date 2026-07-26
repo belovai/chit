@@ -29,9 +29,11 @@ export default defineComponent({
       this.isMenuOpen = false
     },
     onSelect(action: UploadAction) {
-      // Receipt creation flow isn't built yet — this only closes the menu.
-      void action
       this.closeMenu()
+      if (action === 'manual') {
+        this.$router.push({ name: 'transaction-new' })
+      }
+      // 'photo' / 'file': receipt upload flow isn't built yet, no-op.
     },
   },
 })
