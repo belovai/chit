@@ -4,6 +4,7 @@ use App\Providers\AppServiceProvider;
 use App\Providers\HorizonServiceProvider;
 use Modules\Auth\Providers\AuthModuleServiceProvider;
 use Modules\Merchant\Providers\MerchantModuleServiceProvider;
+use Modules\Product\Providers\ProductModuleServiceProvider;
 use Modules\User\Providers\UserModuleServiceProvider;
 
 return [
@@ -13,4 +14,5 @@ return [
     UserModuleServiceProvider::class,
     AuthModuleServiceProvider::class,
     MerchantModuleServiceProvider::class,
+    ProductModuleServiceProvider::class,
 ];
