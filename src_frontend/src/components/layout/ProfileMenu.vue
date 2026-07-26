@@ -68,7 +68,7 @@ export default defineComponent({
       class="absolute top-full right-0 z-20 mt-1 w-48 border border-divider bg-bg shadow-lg"
     >
       <RouterLink
-        :to="{ name: 'settings-profile' }"
+        :to="{ name: 'settings-account' }"
         class="flex items-center gap-2 border-b border-divider px-3 py-2.5 text-sm text-text hover:bg-surface"
         @click="close"
       >

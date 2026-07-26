@@ -28,11 +28,11 @@ const router = createRouter({
           path: 'settings',
           component: () => import('../views/settings/SettingsLayoutView.vue'),
           children: [
-            { path: '', redirect: { name: 'settings-profile' } },
+            { path: '', redirect: { name: 'settings-account' } },
             {
-              path: 'profile',
-              name: 'settings-profile',
-              component: () => import('../views/settings/SettingsProfileView.vue'),
+              path: 'account',
+              name: 'settings-account',
+              component: () => import('../views/settings/SettingsAccountView.vue'),
             },
             {
               path: 'merchants',

@@ -56,7 +56,7 @@ export default defineComponent({
       {{ t('nav.transactions') }}
     </RouterLink>
     <RouterLink
-      :to="{ name: 'settings-profile' }"
+      :to="{ name: 'settings-account' }"
       class="border-b-2 pb-1"
       :class="
         isSettingsActive

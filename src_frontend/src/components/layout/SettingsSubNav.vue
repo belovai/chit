@@ -18,14 +18,14 @@ export default defineComponent({
   computed: {
     tabs(): SettingsTab[] {
       return [
-        { name: 'settings-profile', label: this.t('settingsNav.profile') },
+        { name: 'settings-account', label: this.t('settingsNav.account') },
         { name: 'settings-merchants', label: this.t('settingsNav.merchants') },
         { name: 'settings-tags', label: this.t('settingsNav.tags') },
       ]
     },
 
     activeTabName(): string {
-      return (this.$route.name as string) ?? 'settings-profile'
+      return (this.$route.name as string) ?? 'settings-account'
     },
   },
 
