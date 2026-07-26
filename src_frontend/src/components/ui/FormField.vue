@@ -49,7 +49,7 @@ export default defineComponent({
       :type="type"
       :autocomplete="autocomplete"
       :value="modelValue"
-      class="border border-neutral-400 bg-bg px-3 py-2 text-sm text-text outline-none placeholder:text-neutral-500 focus:border-accent"
+      class="w-full border border-neutral-400 bg-bg px-3 py-2 text-sm text-text outline-none placeholder:text-neutral-500 focus:border-accent"
       :class="{ 'border-danger': errors.length > 0 }"
       @input="onInput"
     />

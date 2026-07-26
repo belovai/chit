@@ -27,7 +27,10 @@ final class MerchantController
 
         return $this->ok(
             data: MerchantResource::collection(
-                Merchant::query()->where('owner_id', $user->id)->paginate(),
+                Merchant::query()
+                    ->where('owner_id', $user->id)
+                    ->withCount('locations')
+                    ->paginate(),
             ),
         );
     }

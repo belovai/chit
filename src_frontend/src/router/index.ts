@@ -40,6 +40,16 @@ const router = createRouter({
               component: () => import('../views/settings/SettingsMerchantsView.vue'),
             },
             {
+              path: 'merchants/new',
+              name: 'settings-merchant-new',
+              component: () => import('../views/settings/SettingsMerchantEditView.vue'),
+            },
+            {
+              path: 'merchants/:hashId',
+              name: 'settings-merchant-edit',
+              component: () => import('../views/settings/SettingsMerchantEditView.vue'),
+            },
+            {
               path: 'tags',
               name: 'settings-tags',
               component: () => import('../views/settings/SettingsTagsView.vue'),

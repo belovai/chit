@@ -1,3 +1,4 @@
+import common from './common'
 import auth from './auth'
 import dashboard from './dashboard'
 import network from './network'
@@ -9,8 +10,11 @@ import receipts from './receipts'
 import transactions from './transactions'
 import profile from './profile'
 import notifications from './notifications'
+import merchants from './merchants'
+import merchant from './merchant'
 
 export default {
+  common,
   auth,
   dashboard,
   network,
@@ -22,4 +26,6 @@ export default {
   transactions,
   profile,
   notifications,
+  merchants,
+  merchant,
 }

@@ -1,4 +1,6 @@
 import { ApiError } from '@/types/auth'
+import router from '@/router'
+import { useAuthStore } from '@/stores/auth'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://chit.127.0.0.1.nip.io'
 
@@ -44,6 +46,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   if (!response.ok) {
     const message = payload?.message ?? response.statusText
     const errors = payload && 'errors' in payload ? payload.errors : undefined
+
+    if (response.status === 401 && router.currentRoute.value.name !== 'login') {
+      useAuthStore().clear()
+      router.push({ name: 'login' })
+    }
+
     throw new ApiError(message, response.status, errors)
   }
 

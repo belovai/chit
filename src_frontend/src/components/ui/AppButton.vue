@@ -10,7 +10,7 @@ export default defineComponent({
       default: 'button',
     },
     variant: {
-      type: String as () => 'primary' | 'ghost',
+      type: String as () => 'primary' | 'ghost' | 'danger',
       default: 'primary',
     },
     disabled: {
@@ -29,7 +29,9 @@ export default defineComponent({
     :class="
       variant === 'primary'
         ? 'bg-accent border-accent text-neutral-100 hover:bg-accent-600 hover:border-accent-600'
-        : 'border-transparent text-accent hover:text-accent-600'
+        : variant === 'danger'
+          ? 'bg-danger border-danger text-neutral-100 hover:bg-danger-700 hover:border-danger-700'
+          : 'border-transparent text-accent hover:text-accent-600'
     "
   >
     <slot />

@@ -6,12 +6,12 @@ namespace Modules\Merchant\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Modules\Merchant\Models\Merchant;
+use Modules\Merchant\Models\MerchantLocation;
 
 /**
- * @mixin Merchant
+ * @mixin MerchantLocation
  */
-final class MerchantResource extends JsonResource
+final class MerchantLocationResource extends JsonResource
 {
     /**
      * @return array<string, mixed>
@@ -21,8 +21,10 @@ final class MerchantResource extends JsonResource
     {
         return [
             'hash_id' => $this->hash_id,
-            'name' => $this->name,
-            'locations_count' => $this->locations_count,
+            'is_online' => $this->is_online,
+            'address' => $this->address,
+            'latitude' => $this->latitude,
+            'longitude' => $this->longitude,
         ];
     }
 }
