@@ -41,14 +41,15 @@ export default defineComponent({
   <div class="md:hidden">
     <button
       type="button"
-      class="fixed right-5 bottom-5 z-20 flex h-12 w-12 items-center justify-center bg-accent2-600 text-2xl text-neutral-100 shadow-lg"
+      class="fixed right-5 z-30 flex h-14 w-14 cursor-pointer items-center justify-center rounded-full bg-accent2-600 text-2xl text-neutral-100 shadow-pop"
+      :style="{ bottom: 'max(1.25rem, env(safe-area-inset-bottom))' }"
       :aria-label="t('receipts.newReceipt')"
       @click="toggle"
     >
       +
     </button>
 
-    <div v-if="isOpen" class="fixed inset-0 z-10 bg-text/45" @click="close"></div>
+    <div v-if="isOpen" class="fixed inset-0 z-30 bg-text/45" @click="close"></div>
     <UploadActionSheet v-if="isOpen" variant="sheet" @select="onSelect" />
   </div>
 </template>

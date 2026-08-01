@@ -19,7 +19,9 @@ export default defineComponent({
   <div class="min-h-screen">
     <TopNav />
     <MobileHeader />
-    <main class="px-4 py-6 md:px-8">
+    <!-- pb-28 mobilon: a lebegő FAB (56px + 20px offset) ne takarja el a lista
+         utolsó elemét hosszú listáknál. -->
+    <main class="mx-auto w-full max-w-7xl px-4 pt-6 pb-28 md:px-8 md:py-8">
       <RouterView />
     </main>
     <UploadFab />

@@ -26,7 +26,14 @@ export default defineComponent({
     },
 
     activeTabName(): string {
-      return (this.$route.name as string) ?? 'settings-account'
+      // Az overlay gyerek-route-oknak saját nevük van (pl.
+      // `settings-merchant-new`), ezért útvonal-előtag alapján egyeztetünk —
+      // különben nyitott overlaynél egyik fül sem lenne aktív.
+      const path = this.$route.path
+      const match = this.tabs.find((tab) =>
+        path.startsWith(this.$router.resolve({ name: tab.name }).path),
+      )
+      return match?.name ?? 'settings-account'
     },
   },
 
@@ -41,16 +48,16 @@ export default defineComponent({
 
 <template>
   <div class="flex flex-col gap-4 md:flex-row md:gap-8">
-    <nav class="hidden w-40 flex-col md:flex">
+    <nav class="hidden w-48 shrink-0 flex-col gap-0.5 md:flex">
       <RouterLink
         v-for="tab in tabs"
         :key="tab.name"
         :to="{ name: tab.name }"
-        class="px-3 py-2 text-sm"
+        class="rounded-md px-3 py-2 text-sm transition-colors"
         :class="
           tab.name === activeTabName
-            ? 'border-l-2 border-accent bg-surface font-semibold text-text'
-            : 'text-neutral-700 hover:text-text'
+            ? 'bg-surface font-semibold text-text'
+            : 'text-neutral-600 hover:bg-surface/60 hover:text-text'
         "
       >
         {{ tab.label }}
@@ -58,7 +65,7 @@ export default defineComponent({
     </nav>
 
     <select
-      class="border border-neutral-400 bg-bg px-3 py-2 text-sm md:hidden"
+      class="rounded-md border border-neutral-300 bg-panel px-3 py-2 text-sm md:hidden"
       :value="activeTabName"
       @change="onMobileSelect"
     >

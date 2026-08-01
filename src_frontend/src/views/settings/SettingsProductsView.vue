@@ -2,6 +2,11 @@
 import { defineComponent } from 'vue'
 import { mapState } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import AppSection from '@/components/ui/AppSection.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppListItem from '@/components/ui/AppListItem.vue'
+import AppEmptyState from '@/components/ui/AppEmptyState.vue'
+import AppButton from '@/components/ui/AppButton.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { productService } from '@/services/product'
@@ -11,6 +16,11 @@ export default defineComponent({
   name: 'SettingsProductsView',
 
   components: {
+    AppSection,
+    AppCard,
+    AppListItem,
+    AppEmptyState,
+    AppButton,
     ConfirmDialog,
   },
 
@@ -29,6 +39,17 @@ export default defineComponent({
 
   computed: {
     ...mapState(useAuthStore, ['token']),
+  },
+
+  watch: {
+    // A lista a named view szülője, ezért overlay nyitásakor nem unmountol.
+    // Záráskor újratöltjük, hogy a modalban létrehozott/szerkesztett termék
+    // megjelenjen.
+    '$route.name'(name: string | undefined) {
+      if (name === 'settings-products') {
+        void this.loadProducts()
+      }
+    },
   },
 
   async mounted() {
@@ -68,44 +89,41 @@ export default defineComponent({
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="flex items-center justify-between">
-      <h1 class="text-xl">{{ t('products.title') }}</h1>
-      <RouterLink
-        :to="{ name: 'settings-product-new' }"
-        class="border font-[family-name:var(--font-heading)] font-semibold px-4 py-2.5 text-sm transition-colors bg-accent border-accent text-neutral-100 hover:bg-accent-600 hover:border-accent-600"
-      >
-        {{ t('products.addProduct') }}
-      </RouterLink>
-    </div>
+    <AppSection :title="t('products.title')">
+      <template #actions>
+        <AppButton @click="$router.push({ name: 'settings-product-new' })">
+          {{ t('products.addProduct') }}
+        </AppButton>
+      </template>
+    </AppSection>
 
-    <p v-if="!isLoading && products.length === 0" class="text-sm text-neutral-600">
-      {{ t('products.emptyState') }}
-    </p>
+    <AppCard :padded="false">
+      <AppEmptyState v-if="!isLoading && products.length === 0" :title="t('products.emptyState')" />
 
-    <ul v-else class="flex flex-col divide-y divide-divider border border-divider bg-surface">
-      <li
-        v-for="product in products"
-        :key="product.hash_id"
-        class="flex items-center justify-between gap-4 px-4 py-3"
-      >
-        <span class="text-sm font-semibold text-text">{{ product.name }}</span>
-        <div class="flex shrink-0 items-center gap-4">
-          <RouterLink
-            :to="{ name: 'settings-product-edit', params: { hashId: product.hash_id } }"
-            class="text-sm text-accent hover:text-accent-600"
-          >
-            {{ t('products.editLink') }}
-          </RouterLink>
-          <button
-            type="button"
-            class="text-sm text-danger-700 hover:text-danger"
-            @click="requestDeleteProduct(product)"
-          >
-            {{ t('products.deleteProduct') }}
-          </button>
-        </div>
-      </li>
-    </ul>
+      <ul v-else class="divide-y divide-divider">
+        <li v-for="product in products" :key="product.hash_id">
+          <AppListItem>
+            <span class="truncate text-sm font-medium text-text">{{ product.name }}</span>
+
+            <template #trailing>
+              <RouterLink
+                :to="{ name: 'settings-product-edit', params: { hashId: product.hash_id } }"
+                class="text-sm text-accent hover:text-accent-600"
+              >
+                {{ t('products.editLink') }}
+              </RouterLink>
+              <button
+                type="button"
+                class="cursor-pointer text-sm text-danger-700 hover:text-danger"
+                @click="requestDeleteProduct(product)"
+              >
+                {{ t('products.deleteProduct') }}
+              </button>
+            </template>
+          </AppListItem>
+        </li>
+      </ul>
+    </AppCard>
 
     <ConfirmDialog
       :open="productPendingDelete !== null"
@@ -115,5 +133,7 @@ export default defineComponent({
       @confirm="confirmDeleteProduct"
       @cancel="cancelDeleteProduct"
     />
+
+    <RouterView name="modal" />
   </div>
 </template>

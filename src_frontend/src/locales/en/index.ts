@@ -1,4 +1,5 @@
 import common from './common'
+import overlay from './overlay'
 import auth from './auth'
 import dashboard from './dashboard'
 import network from './network'
@@ -16,6 +17,7 @@ import products from './products'
 
 export default {
   common,
+  overlay,
   auth,
   dashboard,
   network,

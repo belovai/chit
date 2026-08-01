@@ -3,6 +3,7 @@ import { defineComponent, type PropType } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { mapState } from 'pinia'
 import FormField from '@/components/ui/FormField.vue'
+import AppInput from '@/components/ui/AppInput.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import { useAuthStore } from '@/stores/auth'
 import { productService } from '@/services/product'
@@ -29,6 +30,7 @@ export default defineComponent({
 
   components: {
     FormField,
+    AppInput,
     AppButton,
   },
 
@@ -102,23 +104,32 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="flex flex-col gap-2 border border-divider p-3 sm:flex-row sm:items-start sm:gap-3">
-    <div class="relative min-w-0 flex-1">
+  <!-- A slide-over csak 28rem széles, ezért a mezők nem férnek egy sorba —
+       a leírás külön sorban áll, alatta a mennyiség/egység/egységár rács. -->
+  <div class="flex flex-col gap-2.5 px-4 py-3">
+    <div class="relative min-w-0">
       <FormField
         :id="`item-description-${rowId}`"
-        :model-value="modelValue.description"
+        v-slot="{ describedBy }"
         :label="t('transactions.descriptionLabel')"
         :errors="errorsFor('description')"
-        @update:model-value="onDescriptionInput"
-      />
+      >
+        <AppInput
+          :id="`item-description-${rowId}`"
+          :model-value="modelValue.description"
+          :invalid="errorsFor('description').length > 0"
+          :aria-describedby="describedBy"
+          @update:model-value="onDescriptionInput"
+        />
+      </FormField>
       <ul
         v-if="showSuggestions && suggestions.length > 0"
-        class="absolute z-10 mt-1 w-full border border-divider bg-bg shadow-lg"
+        class="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-divider bg-panel shadow-pop"
       >
         <li v-for="match in suggestions" :key="match.product.hash_id">
           <button
             type="button"
-            class="block w-full px-3 py-2 text-left text-sm hover:bg-surface"
+            class="block w-full cursor-pointer px-3 py-2 text-left text-sm hover:bg-surface"
             @click="selectSuggestion(match)"
           >
             {{ match.product.name }}
@@ -127,36 +138,59 @@ export default defineComponent({
       </ul>
     </div>
 
-    <FormField
-      :id="`item-quantity-${rowId}`"
-      type="number"
-      :model-value="modelValue.quantity"
-      :label="t('transactions.quantityLabel')"
-      :errors="errorsFor('quantity')"
-      class="sm:w-28"
-      @update:model-value="(value: string) => update({ quantity: value })"
-    />
+    <div class="grid grid-cols-3 gap-2">
+      <FormField
+        :id="`item-quantity-${rowId}`"
+        v-slot="{ describedBy }"
+        :label="t('transactions.quantityLabel')"
+        :errors="errorsFor('quantity')"
+        class="min-w-0"
+      >
+        <AppInput
+          :id="`item-quantity-${rowId}`"
+          type="number"
+          :model-value="modelValue.quantity"
+          :invalid="errorsFor('quantity').length > 0"
+          :aria-describedby="describedBy"
+          @update:model-value="(value: string) => update({ quantity: value })"
+        />
+      </FormField>
 
-    <FormField
-      :id="`item-unit-${rowId}`"
-      :model-value="modelValue.unit"
-      :label="t('transactions.unitLabel')"
-      :errors="errorsFor('unit')"
-      class="sm:w-24"
-      @update:model-value="(value: string) => update({ unit: value })"
-    />
+      <FormField
+        :id="`item-unit-${rowId}`"
+        v-slot="{ describedBy }"
+        :label="t('transactions.unitLabel')"
+        :errors="errorsFor('unit')"
+        class="min-w-0"
+      >
+        <AppInput
+          :id="`item-unit-${rowId}`"
+          :model-value="modelValue.unit"
+          :invalid="errorsFor('unit').length > 0"
+          :aria-describedby="describedBy"
+          @update:model-value="(value: string) => update({ unit: value })"
+        />
+      </FormField>
 
-    <FormField
-      :id="`item-unit-price-${rowId}`"
-      type="number"
-      :model-value="modelValue.unitPrice"
-      :label="t('transactions.unitPriceLabel')"
-      :errors="errorsFor('unit_price')"
-      class="sm:w-28"
-      @update:model-value="(value: string) => update({ unitPrice: value })"
-    />
+      <FormField
+        :id="`item-unit-price-${rowId}`"
+        v-slot="{ describedBy }"
+        :label="t('transactions.unitPriceLabel')"
+        :errors="errorsFor('unit_price')"
+        class="min-w-0"
+      >
+        <AppInput
+          :id="`item-unit-price-${rowId}`"
+          type="number"
+          :model-value="modelValue.unitPrice"
+          :invalid="errorsFor('unit_price').length > 0"
+          :aria-describedby="describedBy"
+          @update:model-value="(value: string) => update({ unitPrice: value })"
+        />
+      </FormField>
+    </div>
 
-    <AppButton type="button" variant="ghost" class="self-start sm:mt-5" @click="$emit('remove')">
+    <AppButton type="button" variant="ghost" size="sm" class="self-end" @click="$emit('remove')">
       {{ t('transactions.removeItem') }}
     </AppButton>
   </div>

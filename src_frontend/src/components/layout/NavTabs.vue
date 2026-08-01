@@ -5,6 +5,10 @@ import { useI18n } from 'vue-i18n'
 export default defineComponent({
   name: 'NavTabs',
 
+  props: {
+    dense: { type: Boolean, default: false },
+  },
+
   setup() {
     const { t } = useI18n()
     return { t }
@@ -22,23 +26,36 @@ export default defineComponent({
     isSettingsActive(): boolean {
       return this.$route.path.startsWith('/settings')
     },
+
+    baseTabClass(): string {
+      return [
+        'border-b-2 border-transparent text-sm font-medium text-neutral-600',
+        'transition-colors hover:text-text',
+        this.dense ? 'pb-2' : 'pb-2.5',
+      ].join(' ')
+    },
+
+    activeTabClass(): string {
+      return 'border-accent text-text'
+    },
   },
 })
 </script>
 
 <template>
-  <nav class="flex gap-5 text-sm">
+  <nav class="flex text-sm" :class="dense ? 'gap-4' : 'gap-6'">
     <RouterLink
       :to="{ name: 'dashboard' }"
-      class="border-b-2 border-transparent pb-1 text-neutral-700 hover:text-text"
-      exact-active-class="border-accent text-text font-semibold"
+      :class="baseTabClass"
+      :exact-active-class="activeTabClass"
     >
       {{ t('nav.dashboard') }}
     </RouterLink>
     <RouterLink
       :to="{ name: 'receipts' }"
-      class="flex items-center gap-1 border-b-2 border-transparent pb-1 text-neutral-700 hover:text-text"
-      active-class="border-accent text-text font-semibold"
+      class="flex items-center gap-1.5"
+      :class="baseTabClass"
+      :active-class="activeTabClass"
     >
       {{ t('nav.receipts') }}
       <span
@@ -48,21 +65,12 @@ export default defineComponent({
         {{ needsReviewCount }}
       </span>
     </RouterLink>
-    <RouterLink
-      :to="{ name: 'transactions' }"
-      class="border-b-2 border-transparent pb-1 text-neutral-700 hover:text-text"
-      active-class="border-accent text-text font-semibold"
-    >
+    <RouterLink :to="{ name: 'transactions' }" :class="baseTabClass" :active-class="activeTabClass">
       {{ t('nav.transactions') }}
     </RouterLink>
     <RouterLink
       :to="{ name: 'settings-account' }"
-      class="border-b-2 pb-1"
-      :class="
-        isSettingsActive
-          ? 'border-accent text-text font-semibold'
-          : 'border-transparent text-neutral-700 hover:text-text'
-      "
+      :class="[baseTabClass, isSettingsActive ? activeTabClass : '']"
     >
       {{ t('nav.settings') }}
     </RouterLink>

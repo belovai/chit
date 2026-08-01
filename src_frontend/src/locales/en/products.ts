@@ -6,6 +6,8 @@ export default {
   deleteProduct: 'Delete',
   deleteProductConfirm: 'Delete this product?',
   nameLabel: 'Name',
+  createTitle: 'New product',
+  editTitle: 'Edit product',
   save: 'Save',
   saving: 'Saving...',
   create: 'Create',

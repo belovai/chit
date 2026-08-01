@@ -19,25 +19,36 @@ const router = createRouter({
           name: 'receipts',
           component: () => import('../views/ReceiptsView.vue'),
         },
+        // A `transactions` bejegyzésnek a `transactions/:hashId` ELŐTT kell
+        // állnia, és a statikus `new` gyereknek a paraméteres ág előtt —
+        // különben a paraméteres ág nyelné le a `/transactions/new` útvonalat.
         {
           path: 'transactions',
           name: 'transactions',
           component: () => import('../views/TransactionsView.vue'),
-        },
-        {
-          path: 'transactions/new',
-          name: 'transaction-new',
-          component: () => import('../views/TransactionEditView.vue'),
+          children: [
+            {
+              path: 'new',
+              name: 'transaction-new',
+              components: {
+                modal: () => import('../views/TransactionFormSlideOver.vue'),
+              },
+            },
+          ],
         },
         {
           path: 'transactions/:hashId',
           name: 'transaction-detail',
           component: () => import('../views/TransactionDetailView.vue'),
-        },
-        {
-          path: 'transactions/:hashId/edit',
-          name: 'transaction-edit',
-          component: () => import('../views/TransactionEditView.vue'),
+          children: [
+            {
+              path: 'edit',
+              name: 'transaction-edit',
+              components: {
+                modal: () => import('../views/TransactionFormSlideOver.vue'),
+              },
+            },
+          ],
         },
         {
           path: 'settings',
@@ -53,31 +64,43 @@ const router = createRouter({
               path: 'merchants',
               name: 'settings-merchants',
               component: () => import('../views/settings/SettingsMerchantsView.vue'),
-            },
-            {
-              path: 'merchants/new',
-              name: 'settings-merchant-new',
-              component: () => import('../views/settings/SettingsMerchantEditView.vue'),
-            },
-            {
-              path: 'merchants/:hashId',
-              name: 'settings-merchant-edit',
-              component: () => import('../views/settings/SettingsMerchantEditView.vue'),
+              children: [
+                {
+                  path: 'new',
+                  name: 'settings-merchant-new',
+                  components: {
+                    modal: () => import('../views/settings/MerchantFormSlideOver.vue'),
+                  },
+                },
+                {
+                  path: ':hashId',
+                  name: 'settings-merchant-edit',
+                  components: {
+                    modal: () => import('../views/settings/MerchantFormSlideOver.vue'),
+                  },
+                },
+              ],
             },
             {
               path: 'products',
               name: 'settings-products',
               component: () => import('../views/settings/SettingsProductsView.vue'),
-            },
-            {
-              path: 'products/new',
-              name: 'settings-product-new',
-              component: () => import('../views/settings/SettingsProductEditView.vue'),
-            },
-            {
-              path: 'products/:hashId',
-              name: 'settings-product-edit',
-              component: () => import('../views/settings/SettingsProductEditView.vue'),
+              children: [
+                {
+                  path: 'new',
+                  name: 'settings-product-new',
+                  components: {
+                    modal: () => import('../views/settings/ProductFormModal.vue'),
+                  },
+                },
+                {
+                  path: ':hashId',
+                  name: 'settings-product-edit',
+                  components: {
+                    modal: () => import('../views/settings/ProductFormModal.vue'),
+                  },
+                },
+              ],
             },
             {
               path: 'tags',

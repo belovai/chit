@@ -2,6 +2,8 @@ export default {
   title: 'Transactions',
   empty: 'No transactions yet.',
   newTransaction: 'New transaction',
+  createTitle: 'New transaction',
+  editTitle: 'Edit transaction',
   loadMore: 'Load more',
   edit: 'Edit',
   delete: 'Delete',

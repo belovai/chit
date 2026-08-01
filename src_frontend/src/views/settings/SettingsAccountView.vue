@@ -1,9 +1,20 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AppSection from '@/components/ui/AppSection.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppCardRow from '@/components/ui/AppCardRow.vue'
+import DangerZone from '@/components/ui/DangerZone.vue'
 
 export default defineComponent({
   name: 'SettingsAccountView',
+
+  components: {
+    AppSection,
+    AppCard,
+    AppCardRow,
+    DangerZone,
+  },
 
   setup() {
     const { t } = useI18n()
@@ -13,29 +24,28 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="flex flex-col gap-6">
-    <section class="border border-divider bg-surface p-6">
-      <h2 class="mb-4 text-base font-semibold text-text">{{ t('profile.general') }}</h2>
-      <div class="flex flex-col gap-3 text-sm text-neutral-600">
-        <div class="border border-divider p-4">{{ t('profile.generalNamePlaceholder') }}</div>
-        <div class="border border-divider p-4">{{ t('profile.generalEmailPlaceholder') }}</div>
-        <div class="border border-divider p-4">{{ t('profile.generalAvatarPlaceholder') }}</div>
-      </div>
-    </section>
+  <div class="flex flex-col gap-8">
+    <AppSection :title="t('profile.general')">
+      <AppCard :padded="false">
+        <div class="divide-y divide-divider">
+          <AppCardRow :label="t('profile.generalNamePlaceholder')" />
+          <AppCardRow :label="t('profile.generalEmailPlaceholder')" />
+          <AppCardRow :label="t('profile.generalAvatarPlaceholder')" />
+        </div>
+      </AppCard>
+    </AppSection>
 
-    <section class="border border-divider bg-surface p-6">
-      <h2 class="mb-4 text-base font-semibold text-text">{{ t('profile.security') }}</h2>
-      <div class="flex flex-col gap-3 text-sm text-neutral-600">
-        <div class="border border-divider p-4">{{ t('profile.securityPasswordPlaceholder') }}</div>
-        <div class="border border-divider p-4">{{ t('profile.securityTwoFactorPlaceholder') }}</div>
-      </div>
-    </section>
+    <AppSection :title="t('profile.security')">
+      <AppCard :padded="false">
+        <div class="divide-y divide-divider">
+          <AppCardRow :label="t('profile.securityPasswordPlaceholder')" />
+          <AppCardRow :label="t('profile.securityTwoFactorPlaceholder')" />
+        </div>
+      </AppCard>
+    </AppSection>
 
-    <section class="border border-danger bg-surface p-6">
-      <h2 class="mb-4 text-base font-semibold text-danger">{{ t('profile.danger') }}</h2>
-      <div class="flex flex-col gap-3 text-sm text-neutral-600">
-        <div class="border border-divider p-4">{{ t('profile.dangerDeletePlaceholder') }}</div>
-      </div>
-    </section>
+    <DangerZone :title="t('profile.danger')">
+      <AppCardRow :label="t('profile.dangerDeletePlaceholder')" />
+    </DangerZone>
   </div>
 </template>

@@ -29,14 +29,18 @@ export default defineComponent({
 </script>
 
 <template>
-  <header class="hidden items-center gap-6 border-b border-divider px-8 py-3 md:flex">
-    <img :src="logoUrl" :alt="t('nav.logo')" class="h-6 w-auto" />
+  <header class="hidden border-b border-divider bg-panel md:block">
+    <div class="mx-auto flex w-full max-w-7xl items-center gap-3 px-8 pt-3 pb-2">
+      <img :src="logoUrl" :alt="t('nav.logo')" class="h-6 w-auto" />
 
-    <NavTabs />
+      <div class="ml-auto flex items-center gap-3">
+        <NotificationBell />
+        <ProfileMenu />
+      </div>
+    </div>
 
-    <div class="ml-auto flex items-center gap-3">
-      <NotificationBell />
-      <ProfileMenu />
+    <div class="mx-auto w-full max-w-7xl px-8">
+      <NavTabs />
     </div>
   </header>
 </template>

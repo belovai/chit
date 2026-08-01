@@ -53,7 +53,7 @@ export default defineComponent({
   <div class="relative">
     <button
       type="button"
-      class="flex cursor-pointer items-center gap-1"
+      class="flex cursor-pointer items-center gap-1 rounded-md px-1.5 py-1 hover:bg-surface"
       :aria-expanded="isOpen"
       :aria-label="t('profile.menu')"
       @click="toggle"
@@ -65,11 +65,11 @@ export default defineComponent({
     <div v-if="isOpen" class="fixed inset-0 z-10" @click="close"></div>
     <div
       v-if="isOpen"
-      class="absolute top-full right-0 z-20 mt-1 w-48 border border-divider bg-bg shadow-lg"
+      class="absolute top-full right-0 z-20 mt-1.5 w-52 overflow-hidden rounded-lg border border-divider bg-panel shadow-pop"
     >
       <RouterLink
         :to="{ name: 'settings-account' }"
-        class="flex items-center gap-2 border-b border-divider px-3 py-2.5 text-sm text-text hover:bg-surface"
+        class="flex items-center gap-2 border-b border-divider px-3 py-2.5 text-sm text-text last:border-b-0 hover:bg-surface"
         @click="close"
       >
         <UserCircleIcon class="h-4 w-4" aria-hidden="true" />
@@ -77,7 +77,7 @@ export default defineComponent({
       </RouterLink>
       <button
         type="button"
-        class="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-text hover:bg-surface"
+        class="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm text-text hover:bg-surface"
         @click="logout"
       >
         <ArrowRightStartOnRectangleIcon class="h-4 w-4" aria-hidden="true" />

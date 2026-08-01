@@ -27,9 +27,9 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="w-64 border border-divider bg-bg shadow-lg">
+  <div class="w-72 overflow-hidden rounded-lg border border-divider bg-panel shadow-pop">
     <p
-      class="border-b border-divider px-3 py-2 text-xs font-semibold tracking-wide text-neutral-600 uppercase"
+      class="border-b border-divider bg-surface px-3 py-2 text-xs font-semibold tracking-wide text-neutral-600 uppercase"
     >
       {{ t('notifications.title') }}
     </p>
@@ -38,7 +38,11 @@ export default defineComponent({
       {{ t('notifications.empty') }}
     </p>
     <ul v-else>
-      <li v-for="item in items" :key="item.id" class="border-b border-divider px-3 py-2.5 text-xs">
+      <li
+        v-for="item in items"
+        :key="item.id"
+        class="border-b border-divider px-3 py-2.5 text-xs last:border-b-0"
+      >
         <p class="text-text">
           <span
             v-if="!item.read"
@@ -50,6 +54,8 @@ export default defineComponent({
       </li>
     </ul>
 
-    <p class="px-3 py-2 text-center text-xs text-accent">{{ t('notifications.viewAll') }}</p>
+    <p class="border-t border-divider px-3 py-2 text-center text-xs text-accent">
+      {{ t('notifications.viewAll') }}
+    </p>
   </div>
 </template>

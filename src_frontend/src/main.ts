@@ -1,3 +1,4 @@
+import '@fontsource-variable/instrument-sans'
 import './assets/main.css'
 
 import { createApp } from 'vue'

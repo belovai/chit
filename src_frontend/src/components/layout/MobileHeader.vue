@@ -29,7 +29,7 @@ export default defineComponent({
 </script>
 
 <template>
-  <header class="border-b border-divider md:hidden">
+  <header class="sticky top-0 z-30 border-b border-divider bg-panel md:hidden">
     <div class="flex items-center gap-3 px-4 py-3">
       <img :src="logoUrl" :alt="t('nav.logo')" class="h-6 w-auto" />
 
@@ -39,8 +39,8 @@ export default defineComponent({
       </div>
     </div>
 
-    <div class="overflow-x-auto border-t border-divider px-4 py-2">
-      <NavTabs />
+    <div class="overflow-x-auto px-4">
+      <NavTabs dense />
     </div>
   </header>
 </template>

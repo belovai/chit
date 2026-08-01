@@ -55,11 +55,11 @@ export default defineComponent({
   <div class="relative">
     <button
       type="button"
-      class="relative flex h-6 w-6 cursor-pointer items-center justify-center"
+      class="relative flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-neutral-600 hover:bg-surface hover:text-text"
       :aria-label="t('notifications.title')"
       @click="toggle"
     >
-      <BellIcon class="h-5 w-5 text-neutral-700" aria-hidden="true" />
+      <BellIcon class="h-5 w-5" aria-hidden="true" />
       <span
         v-if="hasUnread"
         class="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-accent2-600"

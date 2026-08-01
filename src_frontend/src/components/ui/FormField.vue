@@ -5,54 +5,30 @@ export default defineComponent({
   name: 'FormField',
 
   props: {
-    id: {
-      type: String,
-      required: true,
-    },
-    label: {
-      type: String,
-      required: true,
-    },
-    type: {
-      type: String,
-      default: 'text',
-    },
-    modelValue: {
-      type: String,
-      required: true,
-    },
-    autocomplete: {
-      type: String,
-      default: undefined,
-    },
-    errors: {
-      type: Array as PropType<string[]>,
-      default: () => [],
-    },
+    id: { type: String, required: true },
+    label: { type: String, required: true },
+    hint: { type: String, default: undefined },
+    errors: { type: Array as PropType<string[]>, default: () => [] },
   },
 
-  emits: ['update:modelValue'],
-
-  methods: {
-    onInput(event: Event) {
-      this.$emit('update:modelValue', (event.target as HTMLInputElement).value)
+  computed: {
+    describedBy(): string | undefined {
+      const ids: string[] = []
+      if (this.hint) ids.push(`${this.id}-hint`)
+      if (this.errors.length > 0) ids.push(`${this.id}-error`)
+      return ids.length > 0 ? ids.join(' ') : undefined
     },
   },
 })
 </script>
 
 <template>
-  <div class="flex flex-col gap-1">
-    <label :for="id" class="text-xs font-semibold text-neutral-700">{{ label }}</label>
-    <input
-      :id="id"
-      :type="type"
-      :autocomplete="autocomplete"
-      :value="modelValue"
-      class="w-full border border-neutral-400 bg-bg px-3 py-2 text-sm text-text outline-none placeholder:text-neutral-500 focus:border-accent"
-      :class="{ 'border-danger': errors.length > 0 }"
-      @input="onInput"
-    />
-    <p v-for="message in errors" :key="message" class="text-xs text-danger-700">{{ message }}</p>
+  <div class="flex flex-col gap-1.5">
+    <label :for="id" class="text-[13px] font-medium text-neutral-700">{{ label }}</label>
+    <slot :described-by="describedBy" />
+    <p v-if="hint" :id="`${id}-hint`" class="text-[13px] text-neutral-600">{{ hint }}</p>
+    <p v-if="errors.length > 0" :id="`${id}-error`" class="text-[13px] text-danger-700">
+      {{ errors.join(' ') }}
+    </p>
   </div>
 </template>

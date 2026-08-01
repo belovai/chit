@@ -1,14 +1,16 @@
 @import 'tailwindcss';
 
-/* Terra design tokens — see /design/terra-tokens.css (.scope-terra) for source values. */
+/* Terra színek Laravel Cloud formanyelvvel — lásd
+   docs/superpowers/specs/2026-07-31-ui-redesign-laravel-cloud-design.md */
 @theme {
-  --font-heading: 'Barlow Condensed', system-ui, sans-serif;
-  --font-body: 'Barlow', system-ui, sans-serif;
+  --font-heading: 'Instrument Sans Variable', system-ui, sans-serif;
+  --font-body: 'Instrument Sans Variable', system-ui, sans-serif;
 
   --color-bg: #f2efe8;
+  --color-panel: #f7f5f0;
   --color-surface: #e9e4d8;
   --color-text: #20211d;
-  --color-divider: color-mix(in srgb, #20211d 16%, transparent);
+  --color-divider: color-mix(in srgb, #20211d 12%, transparent);
 
   --color-neutral-100: #f7f5f0;
   --color-neutral-200: #e9e6dd;
@@ -58,15 +60,26 @@
   --color-success-100: oklch(94% 0.025 150);
   --color-success-700: oklch(38% 0.09 150);
 
-  --radius-none: 0px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --shadow-card: 0 1px 2px rgb(32 33 29 / 0.06);
+  --shadow-pop: 0 4px 12px rgb(32 33 29 / 0.1);
+  --shadow-modal: 0 20px 50px -12px rgb(32 33 29 / 0.28);
 }
 
 @layer base {
+  :root {
+    --ring: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent);
+  }
+
   body {
     background: var(--color-bg);
     color: var(--color-text);
     font-family: var(--font-body);
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.55;
   }
 
@@ -78,16 +91,19 @@
   h6 {
     font-family: var(--font-heading);
     font-weight: 600;
-    letter-spacing: -0.015em;
-    line-height: 1.12;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
   }
 
-  /* Terra direction: square corners everywhere, no border-radius utilities used. */
   input,
   button,
   select,
   textarea {
-    border-radius: 0;
     font-family: inherit;
+  }
+
+  :focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
   }
 }

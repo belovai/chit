@@ -2,6 +2,11 @@
 import { defineComponent } from 'vue'
 import { mapState } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import AppSection from '@/components/ui/AppSection.vue'
+import AppCard from '@/components/ui/AppCard.vue'
+import AppListItem from '@/components/ui/AppListItem.vue'
+import AppEmptyState from '@/components/ui/AppEmptyState.vue'
+import AppBadge from '@/components/ui/AppBadge.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import { useAuthStore } from '@/stores/auth'
 import { transactionService } from '@/services/transaction'
@@ -11,6 +16,11 @@ export default defineComponent({
   name: 'TransactionsView',
 
   components: {
+    AppSection,
+    AppCard,
+    AppListItem,
+    AppEmptyState,
+    AppBadge,
     AppButton,
   },
 
@@ -33,6 +43,16 @@ export default defineComponent({
 
     hasMore(): boolean {
       return this.currentPage < this.lastPage
+    },
+  },
+
+  watch: {
+    // A lista a `transaction-new` overlay named view szülője, ezért nyitáskor
+    // nem unmountol. Záráskor újratöltjük az első oldalt.
+    '$route.name'(name: string | undefined) {
+      if (name === 'transactions') {
+        void this.loadPage(1)
+      }
     },
   },
 
@@ -74,39 +94,52 @@ export default defineComponent({
 
 <template>
   <div class="flex flex-col gap-4">
-    <div class="hidden justify-end md:flex">
-      <AppButton @click="goToNew">{{ t('transactions.newTransaction') }}</AppButton>
-    </div>
+    <AppSection :title="t('transactions.title')">
+      <template #actions>
+        <AppButton @click="goToNew">{{ t('transactions.newTransaction') }}</AppButton>
+      </template>
+    </AppSection>
 
-    <p v-if="transactions.length === 0 && !isLoading" class="text-sm text-neutral-600">
-      {{ t('transactions.empty') }}
-    </p>
+    <AppCard :padded="false">
+      <AppEmptyState
+        v-if="transactions.length === 0 && !isLoading"
+        :title="t('transactions.empty')"
+      />
 
-    <button
-      v-for="transaction in transactions"
-      :key="transaction.hash_id"
-      type="button"
-      class="flex flex-col gap-1 border border-divider bg-surface p-4 text-left hover:border-accent"
-      @click="goToDetail(transaction)"
-    >
-      <div class="flex items-center justify-between">
-        <span class="text-sm font-semibold">{{ transaction.merchant.name }}</span>
-        <span class="text-sm">{{ transaction.total_amount }} {{ transaction.currency }}</span>
-      </div>
-      <div class="flex items-center justify-between text-xs text-neutral-600">
-        <span>{{ transaction.occurred_at }}</span>
-        <span>{{ paymentMethodLabel(transaction.payment_method) }}</span>
-        <span>{{ transaction.items.length }}</span>
-      </div>
-    </button>
+      <ul v-else class="divide-y divide-divider">
+        <li v-for="transaction in transactions" :key="transaction.hash_id">
+          <AppListItem interactive @click="goToDetail(transaction)">
+            <span class="flex flex-col gap-0.5">
+              <span class="truncate text-sm font-medium text-text">
+                {{ transaction.merchant.name }}
+              </span>
+              <span class="flex items-center gap-2 text-[13px] text-neutral-600">
+                {{ transaction.occurred_at }}
+                <AppBadge>{{ paymentMethodLabel(transaction.payment_method) }}</AppBadge>
+              </span>
+            </span>
 
-    <AppButton
-      v-if="hasMore"
-      variant="ghost"
-      :disabled="isLoading"
-      @click="loadPage(currentPage + 1)"
-    >
-      {{ t('transactions.loadMore') }}
-    </AppButton>
+            <template #trailing>
+              <span class="text-sm font-medium text-text">
+                {{ transaction.total_amount }} {{ transaction.currency }}
+              </span>
+            </template>
+          </AppListItem>
+        </li>
+      </ul>
+
+      <template v-if="hasMore" #footer>
+        <AppButton
+          variant="ghost"
+          size="sm"
+          :disabled="isLoading"
+          @click="loadPage(currentPage + 1)"
+        >
+          {{ t('transactions.loadMore') }}
+        </AppButton>
+      </template>
+    </AppCard>
+
+    <RouterView name="modal" />
   </div>
 </template>
