@@ -210,21 +210,66 @@ return [
             'timeout' => 60,
             'nice' => 0,
         ],
+
+        // Orchestration + cheap DB steps. AdvanceRun always lands here.
+        'supervisor-pipeline' => [
+            'connection' => 'redis',
+            'queue' => ['pipeline-default'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 2,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 192,
+            'tries' => 1,
+            'timeout' => 120,
+            'nice' => 0,
+        ],
+
+        // OCR and image preprocessing: CPU-bound, deliberately narrow.
+        'supervisor-pipeline-cpu' => [
+            'connection' => 'redis',
+            'queue' => ['pipeline-cpu'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 512,
+            'tries' => 1,
+            'timeout' => 600,
+            'nice' => 10,
+        ],
+
+        // AI calls: separated so Redis rate limiting can throttle this queue alone.
+        'supervisor-pipeline-ai' => [
+            'connection' => 'redis',
+            'queue' => ['pipeline-ai'],
+            'balance' => 'auto',
+            'autoScalingStrategy' => 'time',
+            'maxProcesses' => 1,
+            'maxTime' => 0,
+            'maxJobs' => 0,
+            'memory' => 192,
+            'tries' => 1,
+            'timeout' => 300,
+            'nice' => 0,
+        ],
     ],
 
     'environments' => [
         'production' => [
-            'supervisor-1' => [
-                'maxProcesses' => 10,
-                'balanceMaxShift' => 1,
-                'balanceCooldown' => 3,
-            ],
+            'supervisor-1' => ['maxProcesses' => 10, 'balanceMaxShift' => 1, 'balanceCooldown' => 3],
+            'supervisor-pipeline' => ['maxProcesses' => 4],
+            'supervisor-pipeline-cpu' => ['maxProcesses' => 2],
+            'supervisor-pipeline-ai' => ['maxProcesses' => 2],
         ],
 
         'local' => [
-            'supervisor-1' => [
-                'maxProcesses' => 3,
-            ],
+            'supervisor-1' => ['maxProcesses' => 3],
+            'supervisor-pipeline' => ['maxProcesses' => 2],
+            'supervisor-pipeline-cpu' => ['maxProcesses' => 1],
+            'supervisor-pipeline-ai' => ['maxProcesses' => 1],
         ],
     ],
 

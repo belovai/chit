@@ -3,5 +3,6 @@ export default {
   dashboard: 'Dashboard',
   receipts: 'Receipts',
   transactions: 'Transactions',
+  pipelines: 'Pipelines',
   settings: 'Settings',
 }

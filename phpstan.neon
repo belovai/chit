@@ -15,6 +15,12 @@ parameters:
         - config
         - modules/*/Config
 
+    databaseMigrationsPath:
+        - database/migrations
+        - modules/*/Database/Migrations
+
+    parseModelCastsMethod: true
+
 #    ignoreErrors:
 #        - '#PHPDoc tag @var#'
 #

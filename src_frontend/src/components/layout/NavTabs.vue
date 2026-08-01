@@ -68,6 +68,9 @@ export default defineComponent({
     <RouterLink :to="{ name: 'transactions' }" :class="baseTabClass" :active-class="activeTabClass">
       {{ t('nav.transactions') }}
     </RouterLink>
+    <RouterLink :to="{ name: 'pipelines' }" :class="baseTabClass" :active-class="activeTabClass">
+      {{ t('nav.pipelines') }}
+    </RouterLink>
     <RouterLink
       :to="{ name: 'settings-account' }"
       :class="[baseTabClass, isSettingsActive ? activeTabClass : '']"

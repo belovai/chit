@@ -19,6 +19,16 @@ const router = createRouter({
           name: 'receipts',
           component: () => import('../views/ReceiptsView.vue'),
         },
+        {
+          path: 'pipelines',
+          name: 'pipelines',
+          component: () => import('../views/PipelineRunsView.vue'),
+        },
+        {
+          path: 'pipelines/:hashId',
+          name: 'pipeline-detail',
+          component: () => import('../views/PipelineRunDetailView.vue'),
+        },
         // A `transactions` bejegyzésnek a `transactions/:hashId` ELŐTT kell
         // állnia, és a statikus `new` gyereknek a paraméteres ág előtt —
         // különben a paraméteres ág nyelné le a `/transactions/new` útvonalat.

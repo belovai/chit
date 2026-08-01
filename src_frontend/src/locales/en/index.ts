@@ -14,6 +14,7 @@ import notifications from './notifications'
 import merchants from './merchants'
 import merchant from './merchant'
 import products from './products'
+import pipeline from './pipeline'
 
 export default {
   common,
@@ -32,4 +33,5 @@ export default {
   merchants,
   merchant,
   products,
+  pipeline,
 }
