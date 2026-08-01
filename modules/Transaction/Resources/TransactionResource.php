@@ -30,7 +30,7 @@ final class TransactionResource extends JsonResource
             'payment_method' => $this->payment_method->value,
             'discount_amount' => $this->discount_amount,
             'total_amount' => $this->total_amount,
-            'occurred_at' => $this->occurred_at->toDateString(),
+            'occurred_at' => $this->occurred_at->format('Y-m-d\TH:i'),
             'items' => TransactionItemResource::collection($this->items),
         ];
     }

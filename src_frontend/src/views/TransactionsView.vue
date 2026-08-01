@@ -10,6 +10,7 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import { useAuthStore } from '@/stores/auth'
 import { transactionService } from '@/services/transaction'
+import { formatDateTime } from '@/utils/datetime'
 import type { Transaction } from '@/types/transaction'
 
 export default defineComponent({
@@ -26,7 +27,7 @@ export default defineComponent({
 
   setup() {
     const { t } = useI18n()
-    return { t }
+    return { t, formatDateTime }
   },
 
   data() {
@@ -114,7 +115,7 @@ export default defineComponent({
                 {{ transaction.merchant.name }}
               </span>
               <span class="flex items-center gap-2 text-[13px] text-neutral-600">
-                {{ transaction.occurred_at }}
+                {{ formatDateTime(transaction.occurred_at) }}
                 <AppBadge>{{ paymentMethodLabel(transaction.payment_method) }}</AppBadge>
               </span>
             </span>

@@ -10,6 +10,7 @@ import AppBadge from '@/components/ui/AppBadge.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { transactionService } from '@/services/transaction'
+import { formatDateTime } from '@/utils/datetime'
 import type { Transaction } from '@/types/transaction'
 
 export default defineComponent({
@@ -26,7 +27,7 @@ export default defineComponent({
 
   setup() {
     const { t } = useI18n()
-    return { t }
+    return { t, formatDateTime }
   },
 
   data() {
@@ -127,7 +128,7 @@ export default defineComponent({
               </span>
             </AppCardRow>
             <AppCardRow :label="t('transactions.dateLabel')">
-              <span class="text-sm text-text">{{ transaction.occurred_at }}</span>
+              <span class="text-sm text-text">{{ formatDateTime(transaction.occurred_at) }}</span>
             </AppCardRow>
             <AppCardRow :label="t('transactions.paymentMethodLabel')">
               <AppBadge>{{ paymentMethodLabel(transaction.payment_method) }}</AppBadge>

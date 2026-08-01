@@ -88,7 +88,7 @@ final class Transaction extends Model
             'payment_method' => PaymentMethod::class,
             'discount_amount' => 'decimal:2',
             'total_amount' => 'decimal:2',
-            'occurred_at' => 'date',
+            'occurred_at' => 'datetime',
         ];
     }
 

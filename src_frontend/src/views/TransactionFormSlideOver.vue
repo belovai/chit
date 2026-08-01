@@ -19,6 +19,7 @@ import { transactionService } from '@/services/transaction'
 import { ApiError } from '@/types/auth'
 import { translateErrorCode } from '@/utils/errors'
 import { randomId } from '@/utils/id'
+import { toDateTimeInputValue } from '@/utils/datetime'
 import type { MerchantLocation } from '@/types/merchant'
 import type { MerchantMatch, PaymentMethod, TransactionPayload } from '@/types/transaction'
 
@@ -64,7 +65,7 @@ export default defineComponent({
       locations: [] as MerchantLocation[],
       locationId: '' as string,
 
-      occurredAt: new Date().toISOString().slice(0, 10),
+      occurredAt: toDateTimeInputValue(new Date()),
       paymentMethod: 'card' as PaymentMethod,
       discountAmount: '',
       totalAmount: '0',
@@ -441,7 +442,7 @@ export default defineComponent({
           <AppInput
             id="transaction-date"
             v-model="occurredAt"
-            type="date"
+            type="datetime-local"
             :invalid="fieldErrorsFor('occurred_at').length > 0"
             :aria-describedby="describedBy"
           />

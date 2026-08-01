@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('payment_method');
             $table->decimal('discount_amount', 12, 2)->nullable();
             $table->decimal('total_amount', 12, 2);
-            $table->date('occurred_at');
+            $table->timestamp('occurred_at');
             $table->softDeletes();
             $table->timestamps();
         });

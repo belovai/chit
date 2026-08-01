@@ -32,7 +32,7 @@ final class TransactionFactory extends Factory
             'payment_method' => PaymentMethod::Card,
             'discount_amount' => null,
             'total_amount' => fake()->randomFloat(2, 1000, 20000),
-            'occurred_at' => fake()->date(),
+            'occurred_at' => fake()->dateTime(),
         ];
     }
 }
