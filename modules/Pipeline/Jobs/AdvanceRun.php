@@ -13,6 +13,7 @@ use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\Enums\StepStatus;
+use Modules\Pipeline\Events\RunStatusChanged;
 use Modules\Pipeline\Models\PipelineRun;
 use Modules\Pipeline\Models\PipelineRunStep;
 use Modules\Pipeline\Registries\StepRegistry;
@@ -89,7 +90,7 @@ final class AdvanceRun implements ShouldQueue
 
             if ($plan->readyStepIds !== []) {
                 if ($run->status === RunStatus::Queued) {
-                    $run->update(['status' => RunStatus::Running, 'started_at' => now()]);
+                    $this->transition($run, RunStatus::Running, ['started_at' => now()]);
                 }
 
                 PipelineRunStep::query()
@@ -130,5 +131,15 @@ final class AdvanceRun implements ShouldQueue
             dependsOn: array_values($step->depends_on ?? []),
             allowFailure: $step->allow_failure,
         ))->all());
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function transition(PipelineRun $run, RunStatus $to, array $extra = []): void
+    {
+        $from = $run->status;
+        $run->update([...$extra, 'status' => $to]);
+        RunStatusChanged::dispatch($run, $from, $to);
     }
 }

@@ -5,12 +5,15 @@ Guidance for AI coding agents working in this repository.
 ## What this project is
 
 Chit — self-hosted personal expense tracker. Upload a receipt/invoice
-(photo or digital file); the system OCRs it locally (no raw image sent to
-an AI model, cost control), passes the OCR text to an LLM for structured
-extraction (merchant, line items, quantity, unit price, amount, date,
-currency), and stores the result after a review/approval step. Manually
-entered items flow into the same data model as OCR-derived ones, only
-`source` differs.
+(photo or digital file); the system OCRs it locally for cheap document
+classification (receipt vs. utility bill), then sends the normalized
+image itself to an LLM for structured extraction (merchant, line items,
+quantity, unit price, amount, date, currency) — local OCR text proved
+unreliable on digits for some receipt fonts (see
+`docs/superpowers/specs/2026-08-02-vision-based-extraction-design.md`),
+so the model reads the image directly instead. The result is stored
+after a review/approval step. Manually entered items flow into the same
+data model as OCR-derived ones, only `source` differs.
 
 Design intent, not to be reverse-engineered from the schema alone:
 
@@ -112,7 +115,10 @@ a specific reason not to.
 - Queue/cache/session: Redis + Laravel Horizon (chosen for job
   observability and native rate-limiting of AI API calls — see brief for
   why RabbitMQ was rejected)
-- OCR: local (Tesseract or PaddleOCR), never sends raw images to an AI API
+- OCR: local (Tesseract or PaddleOCR) for document classification only;
+  the extract step sends the normalized image itself to the AI API
+  (accuracy over the earlier text-only design — see the vision-extraction
+  design doc referenced above)
 - Auth: Sanctum (token-based)
 - Everything runs in Docker Compose
 

@@ -25,6 +25,7 @@ Thumbs.db
 /.cache/
 /.config/
 /.local/
+/node_modules/
 /_ide_helper_models.php
 /.claude/
 /module-helper

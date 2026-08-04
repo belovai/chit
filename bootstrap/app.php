@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Modules\Pipeline\Exceptions\RunNotAwaitingManualException;
 use Modules\Pipeline\Exceptions\RunNotRetryableException;
+use Modules\Receipt\Exceptions\ReceiptNotAwaitingReviewException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,7 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // This app is API-only — there is no web "login" route to redirect
+        // guests to. Left at the framework default, an unauthenticated
+        // request without an explicit `Accept: application/json` header
+        // (e.g. a plain `post()` in tests carrying an UploadedFile, which
+        // can't go through `postJson()`) crashes with a RouteNotFoundException
+        // instead of the 401 JSON response `shouldRenderJsonWhen` intends.
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
@@ -37,4 +44,10 @@ return Application::configure(basePath: dirname(__DIR__))
                 'status' => 409,
             ], 409);
         });
+
+        $exceptions->render(fn (ReceiptNotAwaitingReviewException $e) => response()->json([
+            'message' => 'receipts.not_awaiting_review',
+            'data' => [],
+            'status' => 409,
+        ], 409));
     })->create();

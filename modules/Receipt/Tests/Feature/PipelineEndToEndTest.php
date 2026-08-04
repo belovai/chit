@@ -1,0 +1,257 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Receipt\Tests\Feature;
+
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
+use Modules\Extraction\Ai\Testing\FakeDocumentAi;
+use Modules\Extraction\Ai\ValueObjects\ExtractedLineItem;
+use Modules\Extraction\Ai\ValueObjects\ExtractedReceipt;
+use Modules\Extraction\Enums\DocumentType;
+use Modules\Extraction\Ocr\Testing\FakeOcrEngine;
+use Modules\Merchant\Models\Merchant;
+use Modules\Pipeline\Actions\ResumeRun;
+use Modules\Pipeline\Actions\StartRun;
+use Modules\Pipeline\Enums\ArtifactKind;
+use Modules\Pipeline\Enums\RunStatus;
+use Modules\Pipeline\ValueObjects\PendingArtifact;
+use Modules\Receipt\Enums\ReceiptStatus;
+use Modules\Receipt\Models\Receipt;
+use Modules\Transaction\Models\Transaction;
+use Modules\User\Models\User;
+use PHPUnit\Framework\Attributes\Test;
+use Tests\TestCase;
+
+final class PipelineEndToEndTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('local');
+        FakeOcrEngine::reset();
+        FakeDocumentAi::reset();
+        config()->set('extraction.ocr.engine', 'fake');
+        config()->set('extraction.ai.provider', 'fake');
+        config()->set('receipt.gate.max_warnings', 0);
+    }
+
+    private function receiptFor(User $user): Receipt
+    {
+        Storage::disk('local')->put('receipts/a.png', (string) file_get_contents(
+            base_path('modules/Extraction/Tests/Support/fixtures/aldi-receipt.png'),
+        ));
+
+        return Receipt::factory()->for($user, 'owner')->create([
+            'disk' => 'local', 'path' => 'receipts/a.png', 'mime' => 'image/png',
+            'file_hash' => 'hash-a', 'status' => ReceiptStatus::Pending,
+        ]);
+    }
+
+    private function primeReceiptExtraction(): void
+    {
+        FakeOcrEngine::returns("ALDI\nTej 2 db 389\nOSSZESEN 1327", 0.94);
+        FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'ALDI',
+            occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
+            currency: 'HUF',
+            totalMinor: 132700,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [new ExtractedLineItem('Tej 2.8%', 2.0, 'db', 38900, 77800),
+                new ExtractedLineItem('Kenyer', 1.0, 'db', 54900, 54900)],
+        ), 0.94);
+    }
+
+    #[Test]
+    public function a_clean_receipt_from_a_known_merchant_commits_without_a_human(): void
+    {
+        $user = User::factory()->create();
+        Merchant::factory()->for($user, 'owner')->create(['name' => 'ALDI']);
+        $receipt = $this->receiptFor($user);
+        $this->primeReceiptExtraction();
+
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt);
+        $run->refresh();
+        $receipt->refresh();
+
+        $this->assertSame(RunStatus::Succeeded, $run->status);
+        $this->assertSame(ReceiptStatus::Approved, $receipt->status);
+        $this->assertNotNull($receipt->transaction_id);
+
+        $transaction = Transaction::query()->findOrFail($receipt->transaction_id);
+        $this->assertSame('1327.00', $transaction->total_amount);
+        $this->assertCount(2, $transaction->items);
+        $this->assertSame('receipt', $transaction->source->value);
+    }
+
+    #[Test]
+    public function an_unknown_merchant_parks_the_run_for_review(): void
+    {
+        $user = User::factory()->create();
+        $receipt = $this->receiptFor($user);
+        $this->primeReceiptExtraction();
+
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt);
+        $run->refresh();
+
+        $this->assertSame(RunStatus::AwaitingManual, $run->status);
+        $this->assertSame(ReceiptStatus::NeedsReview, $receipt->refresh()->status);
+        $this->assertNull($receipt->transaction_id);
+
+        $request = $run->artifacts()->where('key', 'review_request')->whereNull('superseded_at')->firstOrFail();
+        $this->assertContains('new_merchant', $request->payload['warnings']);
+        $this->assertContains('merchant', $request->payload['fields']);
+    }
+
+    #[Test]
+    public function approving_a_parked_run_creates_the_merchant_and_the_transaction(): void
+    {
+        $user = User::factory()->create();
+        $receipt = $this->receiptFor($user);
+        $this->primeReceiptExtraction();
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+
+        app(ResumeRun::class)->approve($run, [
+            new PendingArtifact('review_decision', ArtifactKind::Json, [
+                'decision' => 'approve',
+                'values' => ['merchant_name' => 'ALDI Magyarorszag'],
+            ]),
+        ]);
+
+        $run->refresh();
+        $receipt->refresh();
+
+        $this->assertSame(RunStatus::Succeeded, $run->status);
+        $this->assertSame(ReceiptStatus::Approved, $receipt->status);
+        $this->assertNotNull($receipt->transaction_id);
+        $this->assertSame(
+            'ALDI Magyarorszag',
+            Merchant::query()->where('owner_id', $user->id)->firstOrFail()->name,
+        );
+    }
+
+    #[Test]
+    public function a_discount_corrected_during_review_is_what_the_transaction_records(): void
+    {
+        $user = User::factory()->create();
+        $receipt = $this->receiptFor($user);
+        FakeOcrEngine::returns("ALDI\nTej 2 db 389\nOSSZESEN 1127", 0.94);
+        FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'ALDI',
+            occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
+            currency: 'HUF',
+            totalMinor: 112700,
+            // One deduction too many was read off the picture — the reviewer
+            // corrects the discount, not the printed total.
+            discountMinor: 20000,
+            paymentMethod: 'card',
+            items: [new ExtractedLineItem('Tej 2.8%', 2.0, 'db', 38900, 77800),
+                new ExtractedLineItem('Kenyer', 1.0, 'db', 54900, 54900)],
+        ), 0.94);
+
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+
+        app(ResumeRun::class)->approve($run, [
+            new PendingArtifact('review_decision', ArtifactKind::Json, [
+                'decision' => 'approve',
+                'values' => ['discount_minor' => 18600],
+            ]),
+        ]);
+
+        $transaction = Transaction::query()->findOrFail($receipt->refresh()->transaction_id);
+
+        $this->assertSame('186.00', $transaction->discount_amount);
+    }
+
+    #[Test]
+    public function a_discount_cleared_during_review_is_not_recorded_at_all(): void
+    {
+        $user = User::factory()->create();
+        $receipt = $this->receiptFor($user);
+        FakeOcrEngine::returns("ALDI\nTej 2 db 389\nOSSZESEN 1127", 0.94);
+        FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'ALDI',
+            occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
+            currency: 'HUF',
+            totalMinor: 112700,
+            discountMinor: 20000,
+            paymentMethod: 'card',
+            items: [new ExtractedLineItem('Tej 2.8%', 2.0, 'db', 38900, 77800),
+                new ExtractedLineItem('Kenyer', 1.0, 'db', 54900, 54900)],
+        ), 0.94);
+
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+
+        app(ResumeRun::class)->approve($run, [
+            new PendingArtifact('review_decision', ArtifactKind::Json, [
+                'decision' => 'approve',
+                'values' => ['discount_minor' => null],
+            ]),
+        ]);
+
+        $transaction = Transaction::query()->findOrFail($receipt->refresh()->transaction_id);
+
+        $this->assertNull($transaction->discount_amount);
+    }
+
+    #[Test]
+    public function rejecting_a_parked_run_creates_nothing(): void
+    {
+        $user = User::factory()->create();
+        $receipt = $this->receiptFor($user);
+        $this->primeReceiptExtraction();
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+
+        app(ResumeRun::class)->reject($run, [
+            new PendingArtifact('review_decision', ArtifactKind::Json, ['decision' => 'reject']),
+        ]);
+
+        $this->assertSame(RunStatus::Canceled, $run->refresh()->status);
+        $this->assertSame(ReceiptStatus::Rejected, $receipt->refresh()->status);
+        $this->assertNull($receipt->refresh()->transaction_id);
+        $this->assertSame(0, Transaction::query()->count());
+    }
+
+    #[Test]
+    public function a_sum_mismatch_parks_the_run_even_with_a_known_merchant(): void
+    {
+        $user = User::factory()->create();
+        Merchant::factory()->for($user, 'owner')->create(['name' => 'ALDI']);
+        $receipt = $this->receiptFor($user);
+        FakeOcrEngine::returns('ALDI ...', 0.94);
+        FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            'ALDI', CarbonImmutable::parse('2026-07-30'), 'HUF', 999900, null, 'card',
+            [new ExtractedLineItem('Tej', 2.0, 'db', 38900, 77800)],
+        ), 0.94);
+
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+
+        $this->assertSame(RunStatus::AwaitingManual, $run->status);
+        $request = $run->artifacts()->where('key', 'review_request')->whereNull('superseded_at')->firstOrFail();
+        $this->assertContains('line_items_sum_mismatch', $request->payload['blockers']);
+    }
+
+    #[Test]
+    public function a_missing_file_fails_the_run(): void
+    {
+        $user = User::factory()->create();
+        $receipt = Receipt::factory()->for($user, 'owner')->create([
+            'disk' => 'local', 'path' => 'receipts/gone.png',
+        ]);
+
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+
+        $this->assertSame(RunStatus::Failed, $run->status);
+        $this->assertSame(ReceiptStatus::Failed, $receipt->refresh()->status);
+        $this->assertSame('store_file', $run->error_summary['step_key']);
+    }
+}

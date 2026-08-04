@@ -7,6 +7,7 @@ namespace Modules\Pipeline\Actions;
 use Illuminate\Support\Facades\DB;
 use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\Enums\StepStatus;
+use Modules\Pipeline\Events\RunStatusChanged;
 use Modules\Pipeline\Exceptions\RunNotAwaitingManualException;
 use Modules\Pipeline\Jobs\AdvanceRun;
 use Modules\Pipeline\Models\PipelineRun;
@@ -29,6 +30,7 @@ final class ResumeRun
     public function approve(PipelineRun $run, array $artifacts = []): PipelineRun
     {
         $gate = $this->gateStep($run);
+        $from = $run->status;
 
         DB::transaction(function () use ($run, $gate, $artifacts): void {
             foreach ($artifacts as $pending) {
@@ -43,6 +45,7 @@ final class ResumeRun
             $run->update(['status' => RunStatus::Running, 'expires_at' => null]);
         });
 
+        RunStatusChanged::dispatch($run, $from, RunStatus::Running);
         AdvanceRun::dispatch($run->id);
 
         return $run->refresh();

@@ -1,4 +1,4 @@
-import { apiRequest, apiRequestPaginated } from '@/services/http'
+import { apiRequest, apiRequestBlob, apiRequestPaginated } from '@/services/http'
 import type {
   PipelineArtifactPayload,
   PipelineRun,
@@ -40,6 +40,10 @@ export const pipelineService = {
     return apiRequest<PipelineArtifactPayload>(`/api/pipeline-runs/${hashId}/artifacts/${key}`, {
       token,
     })
+  },
+
+  artifactBlob(token: string, hashId: string, key: string) {
+    return apiRequestBlob(`/api/pipeline-runs/${hashId}/artifacts/${key}`, { token })
   },
 
   retry(token: string, hashId: string, payload: RetryPayload) {

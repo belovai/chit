@@ -5,4 +5,63 @@ export default {
   takePhoto: 'Take photo',
   uploadFile: 'Upload file',
   manualEntry: 'Manual entry',
+  loadMore: 'Load more',
+  backToList: 'Back to receipts',
+
+  status: {
+    pending: 'Queued',
+    processing: 'Processing',
+    needs_review: 'Needs review',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    failed: 'Failed',
+    canceled: 'Canceled',
+  },
+
+  docType: {
+    receipt: 'Receipt',
+    utility_bill: 'Utility bill',
+    unknown: 'Unknown',
+  },
+
+  review: {
+    title: 'Review',
+    heading: 'Check what we were unsure about',
+    subheading: 'Everything not listed here looked consistent.',
+    othersTitle: 'The rest of the document',
+    approve: 'Approve',
+    reject: 'Reject',
+    rejectTitle: 'Reject this document?',
+    rejectBody: 'No transaction will be created. The file is kept.',
+    newMerchant: 'Create as a new merchant',
+    newProduct: 'Create as a new product',
+    pickMerchant: 'Pick a merchant',
+    noCandidates: 'No matches found.',
+    previousBill: 'Previous bill',
+    notAwaiting: 'This document is not waiting for a decision.',
+    itemsSubtotal: 'Items subtotal',
+    discount: 'Discount',
+    expectedTotal: 'Expected total',
+    difference: 'Off by',
+  },
+
+  fields: {
+    merchant: 'Merchant',
+    merchant_name: 'Merchant',
+    total_minor: 'Total',
+    occurred_at: 'Date',
+    doc_type: 'Document type',
+    items: 'Line items',
+    meter_reading: 'Meter reading',
+    consumption: 'Consumption',
+    period_start: 'Period start',
+    period_end: 'Period end',
+  },
+
+  upload: {
+    dropHint: 'Drop a photo or PDF here, or choose a file',
+    hintLabel: 'What is this? (optional)',
+    uploading: 'Uploading…',
+    failed: 'Upload failed.',
+  },
 }

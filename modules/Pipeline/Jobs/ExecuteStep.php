@@ -12,6 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\Enums\StepOutcome;
 use Modules\Pipeline\Enums\StepStatus;
+use Modules\Pipeline\Events\RunStatusChanged;
 use Modules\Pipeline\Exceptions\InvalidExpansionException;
 use Modules\Pipeline\Exceptions\StepException;
 use Modules\Pipeline\Models\PipelineRun;
@@ -69,8 +70,7 @@ final class ExecuteStep implements ShouldQueue
         if ($result->outcome() === StepOutcome::Hold) {
             /** @var PipelineRun $run */
             $run = $step->run;
-            $run->update([
-                'status' => RunStatus::AwaitingManual,
+            $this->transition($run, RunStatus::AwaitingManual, [
                 'expires_at' => now()->addDays((int) config('pipeline.gate.expire_after_days')),
             ]);
 
@@ -149,5 +149,15 @@ final class ExecuteStep implements ShouldQueue
             (int) config('pipeline.retry.base_backoff_seconds') * (2 ** ($step->attempt - 1)),
             (int) config('pipeline.retry.max_backoff_seconds'),
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function transition(PipelineRun $run, RunStatus $to, array $extra = []): void
+    {
+        $from = $run->status;
+        $run->update([...$extra, 'status' => $to]);
+        RunStatusChanged::dispatch($run, $from, $to);
     }
 }

@@ -92,6 +92,31 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   return (payload as ApiEnvelope<T>).data
 }
 
+// Binary artifact downloads: `<img src>` / `window.open` cannot attach the
+// Authorization header this app's Bearer-token auth needs, so a protected
+// binary route has to be fetched here and turned into an object URL instead.
+export async function apiRequestBlob(
+  path: string,
+  options: Pick<RequestOptions, 'token' | 'query'> = {},
+): Promise<Blob> {
+  const headers: Record<string, string> = {}
+  if (options.token) {
+    headers.Authorization = `Bearer ${options.token}`
+  }
+
+  const response = await fetch(buildUrl(path, options.query), { headers })
+
+  if (!response.ok) {
+    if (response.status === 401 && router.currentRoute.value.name !== 'login') {
+      useAuthStore().clear()
+      router.push({ name: 'login' })
+    }
+    throw new ApiError(response.statusText, response.status)
+  }
+
+  return response.blob()
+}
+
 // The backend's ApiResponses trait puts a paginated resource collection's items in `data`
 // (flat array) and the pagination info in a sibling `meta` object — not nested under `data`
 // (see app/Traits/ApiResponses.php: `resolved['data']` / `resolved['meta']` from Laravel's

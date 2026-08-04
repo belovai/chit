@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Pipeline\Services;
 
 use Modules\Pipeline\Enums\ArtifactKind;
+use Modules\Pipeline\Events\ArtifactPublished;
 use Modules\Pipeline\Models\PipelineArtifact;
 use Modules\Pipeline\Models\PipelineRun;
 use Modules\Pipeline\Models\PipelineRunStep;
@@ -26,7 +27,7 @@ final class ArtifactWriter
             ->whereNull('superseded_at')
             ->update(['superseded_at' => now()]);
 
-        return PipelineArtifact::query()->create([
+        $created = PipelineArtifact::query()->create([
             'run_id' => $step->run_id,
             'step_id' => $step->id,
             'key' => $pending->key,
@@ -38,6 +39,10 @@ final class ArtifactWriter
             'size_bytes' => $pending->sizeBytes,
             'checksum' => $pending->checksum,
         ]);
+
+        ArtifactPublished::dispatch($created);
+
+        return $created;
     }
 
     /**

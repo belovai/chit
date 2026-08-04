@@ -20,6 +20,11 @@ const router = createRouter({
           component: () => import('../views/ReceiptsView.vue'),
         },
         {
+          path: 'receipts/:hashId/review',
+          name: 'receipt-review',
+          component: () => import('../views/ReceiptReviewView.vue'),
+        },
+        {
           path: 'pipelines',
           name: 'pipelines',
           component: () => import('../views/PipelineRunsView.vue'),

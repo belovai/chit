@@ -6,6 +6,7 @@ namespace Modules\Pipeline\Services;
 
 use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\Enums\StepStatus;
+use Modules\Pipeline\Events\RunStatusChanged;
 use Modules\Pipeline\Models\PipelineRun;
 use Modules\Pipeline\Models\PipelineRunStep;
 
@@ -18,8 +19,7 @@ final class RunFinalizer
         $current = $run->currentSteps();
         $startedAt = $run->started_at ?? $run->queued_at ?? $run->created_at;
 
-        $run->update([
-            'status' => $status,
+        $this->transition($run, $status, [
             'finished_at' => now(),
             'duration_ms' => $startedAt !== null ? (int) $startedAt->diffInMilliseconds(now()) : null,
             'cost_usd_micros' => (int) $current->sum(fn (PipelineRunStep $step): int => (int) $step->cost_usd_micros),
@@ -46,5 +46,15 @@ final class RunFinalizer
         }
 
         return null;
+    }
+
+    /**
+     * @param  array<string, mixed>  $extra
+     */
+    private function transition(PipelineRun $run, RunStatus $to, array $extra = []): void
+    {
+        $from = $run->status;
+        $run->update([...$extra, 'status' => $to]);
+        RunStatusChanged::dispatch($run, $from, $to);
     }
 }

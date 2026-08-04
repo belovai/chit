@@ -20,7 +20,13 @@ apt-get install -y --force-yes --no-install-recommends \
     git \
     cron \
     supervisor \
-    vim
+    vim \
+    tesseract-ocr \
+    tesseract-ocr-hun \
+    tesseract-ocr-eng \
+    poppler-utils \
+    fonts-dejavu-core \
+    ghostscript
 
 # Install intl extention
 RUN docker-php-ext-install intl
@@ -45,6 +51,9 @@ RUN pecl install -f mcrypt && docker-php-ext-enable mcrypt
 
 # Install the PHP redis extension
 RUN pecl install redis && docker-php-ext-enable redis
+
+# Imagick — used by the Extraction module to deskew/denoise scans before OCR.
+RUN pecl install imagick && docker-php-ext-enable imagick
 
 # Install the PHP swoole extension
 # RUN pecl install swoole && docker-php-ext-enable swoole
