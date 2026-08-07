@@ -1,0 +1,176 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PHP_VERSION: '8.4'
+  NODE_VERSION: '24'
+
+jobs:
+  php-style:
+    name: PHP code style (Pint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: intl, zip, bcmath, pcntl, pdo_pgsql, redis, imagick
+          coverage: none
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+
+      - name: Run Pint
+        run: ./vendor/bin/pint --test
+
+  php-static-analysis:
+    name: PHP static analysis (PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: intl, zip, bcmath, pcntl, pdo_pgsql, redis, imagick
+          coverage: none
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse --memory-limit=2G --no-progress
+
+  php-tests:
+    name: PHP tests (PHPUnit)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: chit_testing
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d chit_testing"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: chit_testing
+      DB_USERNAME: app
+      DB_PASSWORD: password
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install OCR system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            tesseract-ocr tesseract-ocr-hun tesseract-ocr-eng \
+            poppler-utils ghostscript fonts-dejavu-core
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: intl, zip, bcmath, pcntl, pdo_pgsql, redis, imagick
+          coverage: none
+
+      - name: Install Composer dependencies
+        uses: ramsey/composer-install@v3
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run PHPUnit
+        run: php artisan test
+
+  php-security:
+    name: PHP security audit (Composer)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          coverage: none
+
+      - name: Audit Composer dependencies
+        run: composer audit --locked --no-interaction
+
+  frontend-quality:
+    name: Frontend lint, types and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src_frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src_frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Oxlint
+        run: npx oxlint .
+
+      - name: ESLint
+        run: npx eslint .
+
+      - name: Prettier
+        run: npx prettier --check src/
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Build
+        run: npm run build-only
+
+  frontend-security:
+    name: Frontend security audit (npm)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src_frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: src_frontend/package-lock.json
+
+      - name: Audit npm dependencies
+        run: npm audit --audit-level=high
