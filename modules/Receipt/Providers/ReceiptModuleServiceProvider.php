@@ -11,6 +11,7 @@ use Modules\Pipeline\Events\RunStatusChanged;
 use Modules\Pipeline\Models\PipelineRun;
 use Modules\Pipeline\Registries\PipelineRegistry;
 use Modules\Pipeline\Registries\StepRegistry;
+use Modules\Receipt\Listeners\DeleteOwnerFilesOnPurge;
 use Modules\Receipt\Listeners\ProjectReceiptCurrentRun;
 use Modules\Receipt\Listeners\ProjectReceiptFields;
 use Modules\Receipt\Listeners\ProjectReceiptStatus;
@@ -32,6 +33,7 @@ use Modules\Receipt\Steps\PreprocessImageStep;
 use Modules\Receipt\Steps\ReviewGateStep;
 use Modules\Receipt\Steps\StoreFileStep;
 use Modules\Receipt\Steps\ValidateTotalsStep;
+use Modules\User\Events\UserPurging;
 
 final class ReceiptModuleServiceProvider extends ServiceProvider
 {
@@ -51,6 +53,7 @@ final class ReceiptModuleServiceProvider extends ServiceProvider
         // stays entirely inside the Receipt module and keeps the Pipeline
         // module unaware that Receipt exists.
         Event::listen('eloquent.created: '.PipelineRun::class, ProjectReceiptCurrentRun::class);
+        Event::listen(UserPurging::class, DeleteOwnerFilesOnPurge::class);
 
         $steps = $this->app->make(StepRegistry::class);
 

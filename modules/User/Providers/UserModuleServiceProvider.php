@@ -8,6 +8,11 @@ use Illuminate\Support\ServiceProvider;
 
 final class UserModuleServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->mergeConfigFrom(__DIR__.'/../Config/user.php', 'user');
+    }
+
     /**
      * @throws \Throwable
      */

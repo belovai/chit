@@ -8,6 +8,7 @@ import AppCardRow from '@/components/ui/AppCardRow.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import DangerZone from '@/components/ui/DangerZone.vue'
+import DeleteAccountModal from '@/views/settings/DeleteAccountModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import { accountService } from '@/services/account'
 import { ApiError } from '@/types/auth'
@@ -27,6 +28,7 @@ export default defineComponent({
     AppButton,
     AppInput,
     DangerZone,
+    DeleteAccountModal,
   },
 
   setup() {
@@ -49,6 +51,7 @@ export default defineComponent({
       savedTimeout: null as ReturnType<typeof setTimeout> | null,
       fieldErrors: {} as Record<string, string[]>,
       generalError: null as string | null,
+      isDeleteModalOpen: false,
     }
   },
 
@@ -111,7 +114,7 @@ export default defineComponent({
   },
 
   methods: {
-    ...mapActions(useAuthStore, ['setUser']),
+    ...mapActions(useAuthStore, { setUser: 'setUser', clearAuth: 'clear' }),
 
     // A siker-visszajelzés tartja nyitva a művelet-sávot; időzítve tűnik el,
     // különben mentés után is ott maradna a sáv.
@@ -195,6 +198,14 @@ export default defineComponent({
       } finally {
         this.savingBlock = null
       }
+    },
+
+    // A fiók már soft delete-elt és a tokenek visszavonva, a takarítás
+    // háttérben fut — itt csak a helyi állapotot kell eldobni.
+    async onAccountDeleted() {
+      this.isDeleteModalOpen = false
+      this.clearAuth()
+      await this.$router.push({ name: 'login' })
     },
 
     handleError(error: unknown) {
@@ -402,8 +413,21 @@ export default defineComponent({
 
     <p v-if="generalErrorText" class="text-sm text-danger-700">{{ generalErrorText }}</p>
 
-    <DangerZone :title="t('profile.danger')">
-      <AppCardRow :label="t('profile.dangerDeletePlaceholder')" />
+    <DangerZone :title="t('profile.danger')" :description="t('profile.dangerDescription')">
+      <AppCardRow
+        :label="t('profile.deleteAccountLabel')"
+        :description="t('profile.deleteAccountDescription')"
+      >
+        <AppButton variant="danger" size="sm" @click="isDeleteModalOpen = true">
+          {{ t('profile.deleteAccountButton') }}
+        </AppButton>
+      </AppCardRow>
     </DangerZone>
+
+    <DeleteAccountModal
+      v-if="isDeleteModalOpen"
+      @close="isDeleteModalOpen = false"
+      @deleted="onAccountDeleted"
+    />
   </div>
 </template>

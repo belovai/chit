@@ -8,9 +8,11 @@ use App\Traits\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\User\Actions\ChangeAccountPassword;
+use Modules\User\Actions\DeleteAccount;
 use Modules\User\Actions\UpdateAccount;
 use Modules\User\Models\User;
 use Modules\User\Requests\ChangeAccountPasswordRequest;
+use Modules\User\Requests\DeleteAccountRequest;
 use Modules\User\Requests\UpdateAccountRequest;
 use Modules\User\Resources\UserResource;
 
@@ -42,6 +44,21 @@ final class AccountController
         return $this->ok(
             data: UserResource::make($updateAccount->handle($user, $request->validated())),
         );
+    }
+
+    /**
+     * @throws \Throwable
+     */
+    public function destroy(
+        DeleteAccountRequest $request,
+        DeleteAccount $deleteAccount,
+    ): JsonResponse {
+        /** @var User $user */
+        $user = $request->user();
+
+        $deleteAccount->handle($user);
+
+        return $this->ok();
     }
 
     public function updatePassword(

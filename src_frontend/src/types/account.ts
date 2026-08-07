@@ -7,3 +7,7 @@ export interface ChangePasswordPayload {
   current_password: string
   password: string
 }
+
+export interface DeleteAccountPayload {
+  current_password: string
+}

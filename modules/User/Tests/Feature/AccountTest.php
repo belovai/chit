@@ -6,6 +6,8 @@ namespace Modules\User\Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Queue;
+use Modules\User\Jobs\PurgeUserData;
 use Modules\User\Models\User;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
@@ -179,6 +181,65 @@ final class AccountTest extends TestCase
 
         $response->assertUnprocessable();
         $response->assertJsonPath('errors.password.0', 'auth.password_must_differ');
+    }
+
+    #[Test]
+    public function delete_soft_deletes_the_account_and_queues_the_purge(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create(['password' => 'old-password']);
+        $token = $this->tokenFor($user);
+
+        $response = $this->withToken($token)->deleteJson('/api/account', [
+            'current_password' => 'old-password',
+        ]);
+
+        $response->assertOk();
+        $this->assertSoftDeleted('users', ['id' => $user->id]);
+        Queue::assertPushed(PurgeUserData::class, fn (PurgeUserData $job): bool => $job->userId === $user->id);
+    }
+
+    #[Test]
+    public function delete_revokes_every_token(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create(['password' => 'old-password']);
+        $user->createToken('other-device');
+
+        $this->withToken($this->tokenFor($user))->deleteJson('/api/account', [
+            'current_password' => 'old-password',
+        ])->assertOk();
+
+        $this->assertSame(0, $user->tokens()->count());
+        $this->assertDatabaseMissing('personal_access_tokens', ['tokenable_id' => $user->id]);
+    }
+
+    #[Test]
+    public function delete_rejects_a_wrong_password(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create(['password' => 'old-password']);
+
+        $response = $this->withToken($this->tokenFor($user))->deleteJson('/api/account', [
+            'current_password' => 'wrong-password',
+        ]);
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('errors.current_password.0', 'auth.invalid_password');
+        $this->assertNotSoftDeleted('users', ['id' => $user->id]);
+        Queue::assertNothingPushed();
+    }
+
+    #[Test]
+    public function delete_requires_a_password(): void
+    {
+        Queue::fake();
+        $user = User::factory()->create();
+
+        $response = $this->withToken($this->tokenFor($user))->deleteJson('/api/account');
+
+        $response->assertUnprocessable();
+        $response->assertJsonPath('errors.current_password.0', 'required');
     }
 
     private function tokenFor(User $user): string
