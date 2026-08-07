@@ -100,7 +100,7 @@ final class CreateTransactionStep implements PipelineStep
                 // boundary, and nowhere else.
                 'total_amount' => ((int) $total) / 100,
                 'occurred_at' => (string) $occurredAt,
-                'items' => $this->items($context, $document, $isBill),
+                'items' => $this->items($context, $document, $isBill, $overrides),
             ]);
         });
 
@@ -201,9 +201,10 @@ final class CreateTransactionStep implements PipelineStep
     }
 
     /**
+     * @param  array<string, mixed>  $overrides
      * @return list<array{product_id: int|null, description: string, quantity: float, unit: string|null, unit_price: float}>
      */
-    private function items(StepContext $context, ExtractedReceipt|ExtractedBill $document, bool $isBill): array
+    private function items(StepContext $context, ExtractedReceipt|ExtractedBill $document, bool $isBill, array $overrides): array
     {
         if ($isBill) {
             /** @var ExtractedBill $document */
@@ -224,10 +225,28 @@ final class CreateTransactionStep implements PipelineStep
 
         /** @var ExtractedReceipt $document */
         $matches = $context->artifactOrNull('product_matches')?->json()['items'] ?? [];
+
+        // The reviewer's per-item pick, keyed by item_index, wins over the
+        // auto-match — same rule as every other field on this document.
+        $itemOverrides = [];
+        foreach ((array) ($overrides['items'] ?? []) as $entry) {
+            if (is_array($entry) && isset($entry['item_index']) && is_numeric($entry['item_index'])) {
+                $itemOverrides[(int) $entry['item_index']] = $entry;
+            }
+        }
+
         $items = [];
 
         foreach ($document->items as $index => $item) {
-            $productId = $matches[$index]['accepted_id'] ?? null;
+            $override = $itemOverrides[$index] ?? null;
+
+            if ($override !== null) {
+                $productId = isset($override['product_id']) && is_numeric($override['product_id'])
+                    ? (int) $override['product_id']
+                    : null;
+            } else {
+                $productId = $matches[$index]['accepted_id'] ?? null;
+            }
 
             if ($productId === null) {
                 // A new product is only created here, on approval — the matching
@@ -235,7 +254,11 @@ final class CreateTransactionStep implements PipelineStep
                 // new merchant is resolved above. There is no gate finding for
                 // an unmatched product: config's `receipt.gate.severity` has no
                 // product-related key, so this never blocks for human review.
-                $productId = $this->createProduct->handle($context->ownerId(), ['name' => $item->description])->id;
+                $productName = is_string($override['product_name'] ?? null) && trim($override['product_name']) !== ''
+                    ? $override['product_name']
+                    : $item->description;
+
+                $productId = $this->createProduct->handle($context->ownerId(), ['name' => $productName])->id;
             }
 
             $items[] = [

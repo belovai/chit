@@ -361,4 +361,69 @@ final class ReceiptBranchStepsTest extends TestCase
         $this->assertSame(1, MerchantLocation::query()->count());
         $this->assertSame($picked->id, Transaction::query()->firstOrFail()->location_id);
     }
+
+    #[Test]
+    public function a_reviewed_product_pick_wins_over_the_auto_match(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $picked = Product::factory()->for($receipt->owner, 'owner')->create(['name' => 'Falusi tej']);
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload()]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'ALDI Hodmezovasarhely', 'accepted_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', ['raw_address' => null, 'accepted_id' => null, 'accepted_hash_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'product_matches', ['items' => [
+            ['item_index' => 0, 'description' => 'Tej 2.8%', 'accepted_id' => null, 'candidates' => []],
+            ['item_index' => 1, 'description' => 'Kenyer', 'accepted_id' => null, 'candidates' => []],
+        ]]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            'values' => [
+                'items' => [
+                    ['item_index' => 0, 'product_id' => $picked->id],
+                ],
+            ],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $transaction = Transaction::query()->firstOrFail();
+        $tej = $transaction->items()->where('description', 'Tej 2.8%')->firstOrFail();
+        $kenyer = $transaction->items()->where('description', 'Kenyer')->firstOrFail();
+
+        $this->assertSame($picked->id, $tej->product_id);
+        $this->assertNotNull($kenyer->product_id);
+        $this->assertNotSame($picked->id, $kenyer->product_id);
+    }
+
+    #[Test]
+    public function a_reviewed_product_name_creates_a_new_product_instead_of_using_the_description(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload()]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'ALDI Hodmezovasarhely', 'accepted_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', ['raw_address' => null, 'accepted_id' => null, 'accepted_hash_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'product_matches', ['items' => [
+            ['item_index' => 0, 'description' => 'Tej 2.8%', 'accepted_id' => null, 'candidates' => []],
+            ['item_index' => 1, 'description' => 'Kenyer', 'accepted_id' => null, 'candidates' => []],
+        ]]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            'values' => [
+                'items' => [
+                    ['item_index' => 1, 'product_id' => null, 'product_name' => 'Rozsos kenyer'],
+                ],
+            ],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $kenyer = Transaction::query()->firstOrFail()->items()->where('description', 'Kenyer')->firstOrFail();
+
+        $this->assertNotNull($kenyer->product_id);
+        $this->assertSame('Rozsos kenyer', $kenyer->product?->name);
+        $this->assertNull(Product::query()->where('name', 'Kenyer')->first());
+    }
 }
