@@ -7,6 +7,7 @@ import AppCard from '@/components/ui/AppCard.vue'
 import AppListItem from '@/components/ui/AppListItem.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import AppPager from '@/components/ui/AppPager.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useAuthStore } from '@/stores/auth'
 import { productService } from '@/services/product'
@@ -21,6 +22,7 @@ export default defineComponent({
     AppListItem,
     AppEmptyState,
     AppButton,
+    AppPager,
     ConfirmDialog,
   },
 
@@ -32,6 +34,8 @@ export default defineComponent({
   data() {
     return {
       products: [] as Product[],
+      currentPage: 1,
+      lastPage: 1,
       isLoading: false,
       productPendingDelete: null as Product | null,
     }
@@ -47,20 +51,23 @@ export default defineComponent({
     // megjelenjen.
     '$route.name'(name: string | undefined) {
       if (name === 'settings-products') {
-        void this.loadProducts()
+        void this.loadPage(1)
       }
     },
   },
 
   async mounted() {
-    await this.loadProducts()
+    await this.loadPage(1)
   },
 
   methods: {
-    async loadProducts() {
+    async loadPage(page: number) {
       this.isLoading = true
       try {
-        this.products = await productService.list(this.token as string)
+        const result = await productService.list(this.token as string, page)
+        this.products = result.data
+        this.currentPage = result.currentPage
+        this.lastPage = result.lastPage
       } finally {
         this.isLoading = false
       }
@@ -80,8 +87,10 @@ export default defineComponent({
         return
       }
       await productService.destroy(this.token as string, product.hash_id)
-      this.products = this.products.filter((item) => item.hash_id !== product.hash_id)
       this.productPendingDelete = null
+
+      const isLastItemOnPage = this.products.length === 1 && this.currentPage > 1
+      await this.loadPage(isLastItemOnPage ? this.currentPage - 1 : this.currentPage)
     },
   },
 })
@@ -123,6 +132,15 @@ export default defineComponent({
           </AppListItem>
         </li>
       </ul>
+
+      <template v-if="lastPage > 1" #footer>
+        <AppPager
+          :current-page="currentPage"
+          :last-page="lastPage"
+          :disabled="isLoading"
+          @change="loadPage"
+        />
+      </template>
     </AppCard>
 
     <ConfirmDialog
