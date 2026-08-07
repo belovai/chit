@@ -23,4 +23,6 @@ export default {
   passwordLabel: 'Password',
   invalid_credentials: 'These credentials do not match our records.',
   password_too_short: 'Password must be at least 6 characters.',
+  invalid_password: 'The password you entered is incorrect.',
+  password_must_differ: 'The new password must differ from the current one.',
 }

@@ -76,6 +76,12 @@ export const useAuthStore = defineStore('auth', {
       this.clear()
     },
 
+    // Fiókadat-módosítás után a token változatlan, csak a tárolt user frissül.
+    setUser(user: User) {
+      this.user = user
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
+    },
+
     persist(token: string, user: User) {
       this.token = token
       this.user = user
