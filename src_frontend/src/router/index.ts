@@ -34,9 +34,9 @@ const router = createRouter({
           name: 'pipeline-detail',
           component: () => import('../views/PipelineRunDetailView.vue'),
         },
-        // A `transactions` bejegyzésnek a `transactions/:hashId` ELŐTT kell
-        // állnia, és a statikus `new` gyereknek a paraméteres ág előtt —
-        // különben a paraméteres ág nyelné le a `/transactions/new` útvonalat.
+        // The `transactions` entry must come BEFORE `transactions/:hashId`,
+        // and the static `new` child before the param branch — otherwise the
+        // param branch would swallow the `/transactions/new` route.
         {
           path: 'transactions',
           name: 'transactions',

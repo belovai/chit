@@ -47,8 +47,8 @@ export default defineComponent({
   },
 
   watch: {
-    // A detail a `transaction-edit` overlay named view szülője, ezért nyitáskor
-    // nem unmountol. Záráskor újratöltjük, hogy a szerkesztett adat látszódjon.
+    // Detail is the parent of the `transaction-edit` overlay named view, so it
+    // doesn't unmount on open. Reload on close so the edited data shows up.
     '$route.name'(name: string | undefined) {
       if (name === 'transaction-detail') {
         void this.loadTransaction()

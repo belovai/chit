@@ -46,9 +46,9 @@ export default defineComponent({
   },
 
   watch: {
-    // A lista a named view szülője, ezért overlay nyitásakor nem unmountol.
-    // Záráskor újratöltjük, hogy a modalban létrehozott/szerkesztett termék
-    // megjelenjen.
+    // The list is the parent of the named view, so it doesn't unmount when
+    // the overlay opens. Reload on close so a product created/edited in the
+    // modal shows up.
     '$route.name'(name: string | undefined) {
       if (name === 'settings-products') {
         void this.loadPage(1)

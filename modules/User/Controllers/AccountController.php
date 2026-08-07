@@ -17,8 +17,8 @@ use Modules\User\Requests\UpdateAccountRequest;
 use Modules\User\Resources\UserResource;
 
 /**
- * A bejelentkezett felhasználó saját fiókja. Nem keverhető a UserController
- * admin CRUD-jával: itt nincs id a route-ban, mindig a tokent birtokló user.
+ * The logged-in user's own account. Not to be confused with UserController's
+ * admin CRUD: there's no id in the route here, always the token-owning user.
  */
 final class AccountController
 {

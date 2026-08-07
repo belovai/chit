@@ -11,9 +11,10 @@ use Modules\Receipt\Models\Receipt;
 use Modules\User\Events\UserPurging;
 
 /**
- * Fiók törlésekor a DB sorokat a `users` cascade viszi, a diszkre írt fájlokat
- * viszont senki. Az artifact fájlok is itt tűnnek el, nem a Pipeline modulban:
- * a Pipeline szándékosan nem ismer domain fogalmakat (így a felhasználót sem).
+ * On account deletion, the `users` cascade handles the DB rows, but nothing
+ * handles the files written to disk. Artifact files also disappear here, not
+ * in the Pipeline module: the Pipeline deliberately knows no domain concepts
+ * (so it doesn't know about the user either).
  */
 final class DeleteOwnerFilesOnPurge
 {

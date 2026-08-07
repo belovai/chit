@@ -85,8 +85,8 @@ export default defineComponent({
       )
     },
 
-    // A művelet-sáv csak akkor jelenik meg, ha van mit menteni — mentés után
-    // még látszik, amíg a visszajelzés el nem tűnik.
+    // The action bar only shows up if there's something to save — after
+    // saving it stays visible until the confirmation disappears.
     showGeneralActions(): boolean {
       return this.isGeneralDirty || this.savedBlock === 'general'
     },
@@ -96,8 +96,8 @@ export default defineComponent({
     },
   },
 
-  // A localStorage-ban tárolt user elavulhat (másik eszközön módosítás),
-  // ezért a szervertől kérjük le a friss adatot, és arról töltjük a formot.
+  // The user stored in localStorage can go stale (edited on another device),
+  // so we fetch fresh data from the server and populate the form from that.
   async mounted() {
     this.resetGeneral()
 
@@ -116,8 +116,8 @@ export default defineComponent({
   methods: {
     ...mapActions(useAuthStore, { setUser: 'setUser', clearAuth: 'clear' }),
 
-    // A siker-visszajelzés tartja nyitva a művelet-sávot; időzítve tűnik el,
-    // különben mentés után is ott maradna a sáv.
+    // The success feedback keeps the action bar open; it disappears on a
+    // timer, otherwise the bar would stay there even after saving.
     markSaved(block: SavedBlock) {
       this.clearSaved()
       this.savedBlock = block
@@ -161,8 +161,8 @@ export default defineComponent({
     async saveGeneral() {
       if (!this.isGeneralDirty || !this.isGeneralValid) return
 
-      // Csak a ténylegesen változott mezőt küldjük, hogy a változatlan email ne
-      // fusson feleslegesen unique ellenőrzésre.
+      // Only send the field that actually changed, so an unchanged email
+      // doesn't needlessly run the unique check.
       const payload: UpdateAccountPayload = {}
       if (this.general.name !== this.user?.name) payload.name = this.general.name.trim()
       if (this.general.email !== this.user?.email) payload.email = this.general.email.trim()
@@ -200,8 +200,8 @@ export default defineComponent({
       }
     },
 
-    // A fiók már soft delete-elt és a tokenek visszavonva, a takarítás
-    // háttérben fut — itt csak a helyi állapotot kell eldobni.
+    // The account is already soft-deleted and tokens revoked, cleanup runs
+    // in the background — here we just need to drop the local state.
     async onAccountDeleted() {
       this.isDeleteModalOpen = false
       this.clearAuth()
@@ -274,8 +274,8 @@ export default defineComponent({
             <AppCardRow :label="t('profile.generalAvatarPlaceholder')" />
           </div>
 
-          <!-- Összecsukott állapotban `inert`, különben a nem látszó gombokra is
-               rá lehetne fókuszálni tabbal. -->
+          <!-- `inert` while collapsed, otherwise the hidden buttons could
+               still be tabbed into. -->
           <div
             class="grid transition-all duration-150 ease-out"
             :class="
@@ -373,8 +373,8 @@ export default defineComponent({
             <AppCardRow :label="t('profile.securityTwoFactorPlaceholder')" />
           </div>
 
-          <!-- Összecsukott állapotban `inert`, különben a nem látszó gombokra is
-               rá lehetne fókuszálni tabbal. -->
+          <!-- `inert` while collapsed, otherwise the hidden buttons could
+               still be tabbed into. -->
           <div
             class="grid transition-all duration-150 ease-out"
             :class="

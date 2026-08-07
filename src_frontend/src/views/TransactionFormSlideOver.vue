@@ -156,9 +156,9 @@ export default defineComponent({
     },
 
     /**
-     * A szülő route a módtól függ (létrehozásnál a lista, szerkesztésnél a
-     * részletező oldal), ezért nem a `useModalRoute` composable-t használjuk —
-     * a döntési logika viszont azonos.
+     * The parent route depends on mode (the list on create, the detail page
+     * on edit), so we don't use the `useModalRoute` composable — the decision
+     * logic is the same, though.
      */
     close() {
       const hashId = this.$route.params.hashId as string | undefined
@@ -338,8 +338,8 @@ export default defineComponent({
             )
           : await transactionService.create(this.token as string, this.buildPayload())
 
-        // A `beforeRouteLeave` guard előtt kell törölni, különben a saját
-        // navigációnkat blokkolná egy „nem mentett módosítás" kérdéssel.
+        // Must clear before the `beforeRouteLeave` guard, otherwise it would
+        // block our own navigation with an "unsaved changes" prompt.
         this.isDirty = false
 
         await this.$router.push({

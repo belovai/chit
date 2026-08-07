@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\User\Events;
 
 /**
- * A törlésre ítélt felhasználó adatainak takarítása előtt sül el. A User modul
- * nem ismerheti a rá épülő modulokat, ezért a saját fájljait mindegyik modul
- * maga takarítja el egy listenerben — a DB sorokat a `users` cascade viszi.
+ * Fires before cleaning up data for a user marked for deletion. The User module
+ * can't know the modules built on top of it, so each module cleans up its own
+ * files in a listener — the DB rows are handled by the `users` cascade.
  */
 final class UserPurging
 {

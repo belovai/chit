@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Terra színek Laravel Cloud formanyelvvel — lásd
+/* Terra colors with Laravel Cloud design language — see
    docs/superpowers/specs/2026-07-31-ui-redesign-laravel-cloud-design.md */
 @theme {
   --font-heading: 'Instrument Sans Variable', system-ui, sans-serif;

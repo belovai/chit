@@ -15,8 +15,8 @@ final class UpdateAccount
     {
         $attributes = $validated;
 
-        // Nincs még e-mail megerősítő folyamat, de a korábbi megerősítés az új
-        // címre nem érvényes — inkább null, mint hamis "verified" állapot.
+        // There's no email verification flow yet, but the prior verification
+        // doesn't apply to the new address — null beats a false "verified" state.
         if (isset($validated['email']) && $validated['email'] !== $user->email) {
             $attributes['email_verified_at'] = null;
         }

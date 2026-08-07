@@ -37,9 +37,9 @@ final class PurgeUserDataTest extends TestCase
     }
 
     /**
-     * A táblák RESTRICT FK-kal is hivatkoznak egymásra (transaction_items ->
-     * products, transactions -> merchants/merchant_locations), amibe egy sima
-     * `users` cascade beleütközne.
+     * The tables also reference each other via RESTRICT FKs (transaction_items ->
+     * products, transactions -> merchants/merchant_locations), which a plain
+     * `users` cascade would run into.
      */
     #[Test]
     public function purge_deletes_owned_rows_across_restricting_foreign_keys(): void

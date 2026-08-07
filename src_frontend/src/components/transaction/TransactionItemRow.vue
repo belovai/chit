@@ -104,8 +104,8 @@ export default defineComponent({
 </script>
 
 <template>
-  <!-- A slide-over csak 28rem széles, ezért a mezők nem férnek egy sorba —
-       a leírás külön sorban áll, alatta a mennyiség/egység/egységár rács. -->
+  <!-- The slide-over is only 28rem wide, so the fields don't fit on one row —
+       the description sits on its own row, with the quantity/unit/unit-price grid below. -->
   <div class="flex flex-col gap-2.5 px-4 py-3">
     <div class="relative min-w-0">
       <FormField

@@ -17,8 +17,8 @@ final class DeleteAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Visszafordíthatatlan művelet, ezért jelszóval erősítjük meg — a
-            // guardot explicit adjuk meg, mert Bearer tokennel jövünk.
+            // Irreversible operation, so we confirm with a password — the
+            // guard is given explicitly because we come in with a Bearer token.
             'current_password' => ['required', 'string', 'current_password:sanctum'],
         ];
     }

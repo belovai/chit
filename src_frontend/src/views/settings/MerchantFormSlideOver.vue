@@ -36,8 +36,8 @@ function draftFromLocation(location: MerchantLocation): LocationDraft {
   }
 }
 
-// A Google Maps vágólapra „46.4106993, 20.3257447" alakban tesz koordinátát.
-// Csak pontot fogadunk el tizedesjelnek, mert a vessző itt elválasztó.
+// Google Maps puts coordinates on the clipboard as "46.4106993, 20.3257447".
+// We only accept a dot as the decimal separator, since a comma is the delimiter here.
 const COORDINATE_PAIR = /^\s*(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)\s*$/
 
 function parseCoordinatePair(value: string): { latitude: string; longitude: string } | null {
@@ -155,9 +155,10 @@ export default defineComponent({
       )
     },
 
-    // Koordinátapár beillesztésekor (Google Maps vágólap) magától szétosztjuk
-    // a két mező között — bármelyikbe is illesztették be. Gépelésre szándékosan
-    // nem fut, mert a félkész `46.41, 2` állapot is illeszkedne a mintára.
+    // When a coordinate pair is pasted (Google Maps clipboard), we split it
+    // across the two fields automatically — whichever field it was pasted
+    // into. Deliberately doesn't run on typing, since a half-typed `46.41, 2`
+    // state would also match the pattern.
     onCoordinatePaste(event: ClipboardEvent, draft: LocationDraft) {
       const pair = parseCoordinatePair(event.clipboardData?.getData('text') ?? '')
       if (!pair) {

@@ -10,8 +10,8 @@ use Modules\User\Models\User;
 final class DeleteAccount
 {
     /**
-     * A kérés csak soft delete-el és kilépteti a felhasználót minden eszközön;
-     * a végleges takarítás háttérben, a PurgeUserData jobban fut.
+     * The request only soft-deletes and logs the user out on every device;
+     * permanent cleanup runs in the background, in the PurgeUserData job.
      *
      * @throws \Throwable
      */

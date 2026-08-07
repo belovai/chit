@@ -19,8 +19,8 @@ export default defineComponent({
   <div class="min-h-screen">
     <TopNav />
     <MobileHeader />
-    <!-- pb-28 mobilon: a lebegő FAB (56px + 20px offset) ne takarja el a lista
-         utolsó elemét hosszú listáknál. -->
+    <!-- pb-28 on mobile: keep the floating FAB (56px + 20px offset) from covering
+         the last list item on long lists. -->
     <main class="mx-auto w-full max-w-7xl px-4 pt-6 pb-28 md:px-8 md:py-8">
       <RouterView />
     </main>

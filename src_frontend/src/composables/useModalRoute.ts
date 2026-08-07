@@ -1,11 +1,11 @@
 import { useRouter, type RouteParamsRawGeneric } from 'vue-router'
 
 /**
- * Zárási logika overlay-route-okhoz.
+ * Close logic for overlay routes.
  *
- * Ha az előző history-bejegyzés a szülő route, `back()` — így nem nő a
- * history. Ha nem (deep link), `replace()` — így a vissza gomb nem nyitja
- * újra az overlayt.
+ * If the previous history entry is the parent route, `back()` — so history
+ * doesn't grow. If not (deep link), `replace()` — so the back button doesn't
+ * reopen the overlay.
  */
 export function useModalRoute(parentRouteName: string, parentParams: RouteParamsRawGeneric = {}) {
   const router = useRouter()

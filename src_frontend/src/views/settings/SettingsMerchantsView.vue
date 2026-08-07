@@ -59,9 +59,9 @@ export default defineComponent({
   },
 
   watch: {
-    // A lista a named view szülője, ezért overlay nyitásakor nem unmountol.
-    // Záráskor (visszatérés a `settings-merchants` route-ra) újratöltjük, hogy
-    // az overlayben létrehozott/szerkesztett merchant megjelenjen.
+    // The list is the parent of the named view, so it doesn't unmount when
+    // the overlay opens. Reload on close (returning to the `settings-merchants`
+    // route) so a merchant created/edited in the overlay shows up.
     '$route.name'(name: string | undefined) {
       if (name === 'settings-merchants') {
         this.locationsByMerchant = {}
@@ -122,8 +122,8 @@ export default defineComponent({
       return `${Number(location.latitude).toFixed(6)}, ${Number(location.longitude).toFixed(6)}`
     },
 
-    // Koordináta pontosabb, ezért elsőbbséget élvez a cím fölött; cím-csak
-    // helynél szöveges keresésre esünk vissza.
+    // Coordinates are more precise, so they take priority over the address;
+    // for address-only locations we fall back to a text search.
     mapsHref(location: MerchantLocation): string | null {
       if (this.hasCoordinates(location)) {
         return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(

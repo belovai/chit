@@ -50,8 +50,8 @@ export default defineComponent({
   },
 
   watch: {
-    // A lista a `transaction-new` overlay named view szülője, ezért nyitáskor
-    // nem unmountol. Záráskor újratöltjük az első oldalt.
+    // The list is the parent of the `transaction-new` overlay named view, so
+    // it doesn't unmount on open. Reload the first page on close.
     '$route.name'(name: string | undefined) {
       if (name === 'transactions') {
         void this.loadPage(1)

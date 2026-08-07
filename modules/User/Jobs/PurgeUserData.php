@@ -16,9 +16,9 @@ use Modules\User\Events\UserPurging;
 use Modules\User\Models\User;
 
 /**
- * A fiók törlése két lépés: a kérés azonnal soft delete-el (a felhasználó
- * kilép), a tényleges takarítás pedig itt, háttérben fut — sok receipt/artifact
- * fájlnál ez másodpercekig is tarthat.
+ * Account deletion is two steps: the request soft-deletes immediately (the
+ * user is logged out), and the actual cleanup runs here, in the background —
+ * with many receipt/artifact files this can take seconds.
  */
 final class PurgeUserData implements ShouldQueue
 {
@@ -42,16 +42,16 @@ final class PurgeUserData implements ShouldQueue
             return;
         }
 
-        // Előbb a fájlok, amíg a sorok még megvannak: a takarítás után már nem
-        // lenne miből kiolvasni a disk/path párokat.
+        // Files first, while the rows still exist: after cleanup there'd be
+        // nothing left to read the disk/path pairs from.
         Event::dispatch(new UserPurging($user->id));
 
         /** @var list<string> $tables */
         $tables = config('user.purge_tables', []);
 
         DB::transaction(function () use ($user, $tables): void {
-            // A táblák egymásra is hivatkoznak RESTRICT-tel, ezért nem bízhatjuk
-            // az egészet a `users` cascade-jére — lásd config/user.purge_tables.
+            // The tables also reference each other with RESTRICT, so we can't
+            // trust it all to the `users` cascade — see config/user.purge_tables.
             foreach ($tables as $table) {
                 DB::table($table)->where('owner_id', $user->id)->delete();
             }

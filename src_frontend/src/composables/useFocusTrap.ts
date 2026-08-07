@@ -44,9 +44,9 @@ export function useFocusTrap(containerRef: Ref<HTMLElement | null>) {
       return
     }
 
-    // Űrlapot tartalmazó overlaynél az első beviteli mező a helyes belépési
-    // pont — DOM-sorrendben a fejléc bezáró gombja lenne az első, ami
-    // használhatatlan kezdőfókusz.
+    // For overlays containing a form, the first input field is the right entry
+    // point — in DOM order the header's close button would be first, which is
+    // a useless initial focus.
     const firstControl = elements.find((element) =>
       ['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName),
     )

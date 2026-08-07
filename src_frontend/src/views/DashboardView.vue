@@ -24,8 +24,8 @@ export default defineComponent({
 
 <template>
   <div class="flex flex-col gap-6">
-    <!-- Az értékek szándékosan üresek: nincs mögöttük adatforrás, és a
-         dashboard adatlekérése nincs ebben a körben. -->
+    <!-- Values are intentionally empty: there's no data source behind them yet,
+         and wiring up dashboard data fetching is out of scope for this round. -->
     <div class="grid gap-4 sm:grid-cols-3">
       <AppStatTile :label="t('dashboard.statSpend')" value="—" />
       <AppStatTile :label="t('dashboard.statReceipts')" value="—" />

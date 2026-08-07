@@ -26,9 +26,9 @@ export default defineComponent({
     },
 
     activeTabName(): string {
-      // Az overlay gyerek-route-oknak saját nevük van (pl.
-      // `settings-merchant-new`), ezért útvonal-előtag alapján egyeztetünk —
-      // különben nyitott overlaynél egyik fül sem lenne aktív.
+      // Overlay child routes have their own name (e.g.
+      // `settings-merchant-new`), so we match by path prefix — otherwise no
+      // tab would be active while an overlay is open.
       const path = this.$route.path
       const match = this.tabs.find((tab) =>
         path.startsWith(this.$router.resolve({ name: tab.name }).path),
