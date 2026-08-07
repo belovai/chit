@@ -1,5 +1,7 @@
 ## Development
 
+[![CI](https://github.com/belovai/chit/actions/workflows/ci.yml/badge.svg)](https://github.com/belovai/chit/actions/workflows/ci.yml)
+
 ### Local env
 
 URL: http://chit.127.0.0.1.nip.io/
