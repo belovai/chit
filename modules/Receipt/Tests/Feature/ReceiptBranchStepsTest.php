@@ -9,11 +9,13 @@ use Modules\Extraction\Ai\Testing\FakeDocumentAi;
 use Modules\Extraction\Ai\ValueObjects\ExtractedLineItem;
 use Modules\Extraction\Ai\ValueObjects\ExtractedReceipt;
 use Modules\Merchant\Models\Merchant;
+use Modules\Merchant\Models\MerchantLocation;
 use Modules\Pipeline\Enums\ArtifactKind;
 use Modules\Pipeline\Enums\StepOutcome;
 use Modules\Pipeline\Services\ArtifactWriter;
 use Modules\Pipeline\ValueObjects\PendingArtifact;
 use Modules\Product\Models\Product;
+use Modules\Receipt\Steps\CreateTransactionStep;
 use Modules\Receipt\Steps\DedupeContentStep;
 use Modules\Receipt\Steps\ExtractReceiptStep;
 use Modules\Receipt\Steps\MatchMerchantStep;
@@ -43,6 +45,7 @@ final class ReceiptBranchStepsTest extends TestCase
     {
         return [
             'merchant_name' => 'ALDI Hodmezovasarhely',
+            'merchant_address' => null,
             'occurred_at' => '2026-07-30T14:12:00',
             'currency' => 'HUF',
             'total_minor' => 132700,
@@ -61,7 +64,7 @@ final class ReceiptBranchStepsTest extends TestCase
     public function extract_publishes_the_raw_payload_confidence_and_cost(): void
     {
         FakeDocumentAi::willExtract(new ExtractedReceipt(
-            'ALDI', null, 'HUF', 132700, null, 'card',
+            'ALDI', null, null, 'HUF', 132700, null, 'card',
             [new ExtractedLineItem('Tej', 2.0, 'db', 38900, 77800)],
         ), 0.88);
 
@@ -247,5 +250,115 @@ final class ReceiptBranchStepsTest extends TestCase
         $this->seedArtifact($step, 'merchant_candidates', ['accepted_id' => null, 'candidates' => []]);
 
         $this->assertSame([], app(DedupeContentStep::class)->handle($this->contextFor($step))->findings());
+    }
+
+    #[Test]
+    public function it_creates_a_location_from_a_reviewed_address(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload([
+            'merchant_name' => 'SPAR',
+            'merchant_address' => '6723 Szeged, Szilléri sugár út 26.',
+        ])]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'SPAR', 'accepted_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', [
+            'raw_address' => '6723 Szeged, Szilléri sugár út 26.',
+            'accepted_id' => null,
+            'accepted_hash_id' => null,
+            'candidates' => [],
+        ]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            'values' => [
+                'merchant_name' => 'SPAR',
+                'location_address' => '6723 Szeged, Szilléri sugár út 26.',
+            ],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $location = MerchantLocation::query()->firstOrFail();
+        $this->assertSame('6723 Szeged, Szilléri sugár út 26.', $location->address);
+        $this->assertSame('SPAR', $location->merchant?->name);
+        $this->assertSame($location->id, Transaction::query()->firstOrFail()->location_id);
+    }
+
+    #[Test]
+    public function it_reuses_an_existing_location_instead_of_duplicating_it(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $merchant = Merchant::factory()->create(['owner_id' => $receipt->owner_id, 'name' => 'SPAR']);
+        $existing = MerchantLocation::factory()->for($merchant)->create([
+            'address' => '6723 Szeged, Szilléri sugár út 26.',
+        ]);
+
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload(['merchant_name' => 'SPAR'])]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'SPAR', 'accepted_id' => $merchant->id, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', [
+            'raw_address' => null, 'accepted_id' => null, 'accepted_hash_id' => null, 'candidates' => [],
+        ]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            // Same branch, spelled the other way — must not create a second row.
+            'values' => ['location_address' => '6723 Szeged Szilleri sgt. 26'],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $this->assertSame(1, MerchantLocation::query()->count());
+        $this->assertSame($existing->id, Transaction::query()->firstOrFail()->location_id);
+    }
+
+    #[Test]
+    public function an_explicit_null_location_beats_the_candidate(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $merchant = Merchant::factory()->create(['owner_id' => $receipt->owner_id, 'name' => 'SPAR']);
+        $location = MerchantLocation::factory()->for($merchant)->create(['address' => '6723 Szeged, Szilléri sugár út 26.']);
+
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload(['merchant_name' => 'SPAR'])]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'SPAR', 'accepted_id' => $merchant->id, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', [
+            'raw_address' => '6723 Szeged, Szilléri sugár út 26.',
+            'accepted_id' => $location->id,
+            'accepted_hash_id' => $location->hash_id,
+            'candidates' => [],
+        ]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            'values' => ['location_hash_id' => null],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $this->assertNull(Transaction::query()->firstOrFail()->location_id);
+    }
+
+    #[Test]
+    public function a_selected_location_hash_id_wins(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $merchant = Merchant::factory()->create(['owner_id' => $receipt->owner_id, 'name' => 'SPAR']);
+        $picked = MerchantLocation::factory()->for($merchant)->create(['address' => '1052 Budapest, Deák Ferenc tér 3.']);
+
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload(['merchant_name' => 'SPAR'])]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'SPAR', 'accepted_id' => $merchant->id, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', [
+            'raw_address' => null, 'accepted_id' => null, 'accepted_hash_id' => null, 'candidates' => [],
+        ]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            'values' => ['location_hash_id' => $picked->hash_id],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $this->assertSame(1, MerchantLocation::query()->count());
+        $this->assertSame($picked->id, Transaction::query()->firstOrFail()->location_id);
     }
 }

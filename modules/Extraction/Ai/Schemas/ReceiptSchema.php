@@ -14,9 +14,10 @@ final class ReceiptSchema
         return [
             'type' => 'object',
             'additionalProperties' => false,
-            'required' => ['merchant_name', 'occurred_at', 'currency', 'total_minor', 'discount_minor', 'payment_method', 'items', 'confidence'],
+            'required' => ['merchant_name', 'merchant_address', 'occurred_at', 'currency', 'total_minor', 'discount_minor', 'payment_method', 'items', 'confidence'],
             'properties' => [
-                'merchant_name' => ['type' => ['string', 'null'], 'description' => 'The merchant exactly as printed, including any branch suffix.'],
+                'merchant_name' => ['type' => ['string', 'null'], 'description' => 'The brand name only, with no branch marker and no company form (KFT., ZRT., BT.).'],
+                'merchant_address' => ['type' => ['string', 'null'], 'description' => "The branch's own street address as printed, or null when only the registered office appears."],
                 'occurred_at' => ['type' => ['string', 'null'], 'description' => 'Purchase date and time as YYYY-MM-DDTHH:MM:SS. Omit the time part if the receipt has none.'],
                 'currency' => ['type' => ['string', 'null'], 'description' => 'ISO 4217 code, e.g. HUF or EUR.'],
                 'total_minor' => ['type' => ['integer', 'null'], 'description' => 'Grand total in MINOR units (HUF has no minor unit, so 1327 Ft = 132700). Never a decimal.'],

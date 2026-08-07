@@ -7,21 +7,34 @@ import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
+import AppBadge, { type BadgeVariant } from '@/components/ui/AppBadge.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import FindingList from '@/components/pipeline/FindingList.vue'
 import ReviewFieldRow from '@/components/receipt/ReviewFieldRow.vue'
 import CandidatePicker from '@/components/receipt/CandidatePicker.vue'
+import MerchantResolver from '@/components/receipt/MerchantResolver.vue'
 import { useAuthStore } from '@/stores/auth'
 import { receiptService } from '@/services/receipt'
 import { pipelineService } from '@/services/pipeline'
-import type { Candidate, ReceiptDetail, ReceiptFinding } from '@/types/receipt'
+import type { Candidate, ReceiptDetail, ReceiptFinding, ReceiptStatus } from '@/types/receipt'
 
-// The flagged field name shown in the review UI does not always match the key
-// the extraction payload uses for it — `merchant` is the gate's field name,
-// but the raw extracted value lives under `merchant_name`. This maps the two
-// so the "everything else" section does not repeat what is already expanded.
-const FIELD_TO_EXTRACTED_KEY: Record<string, string> = {
-  merchant: 'merchant_name',
+const STATUS_VARIANTS: Record<ReceiptStatus, BadgeVariant> = {
+  pending: 'neutral',
+  processing: 'neutral',
+  needs_review: 'warning',
+  approved: 'success',
+  rejected: 'danger',
+  failed: 'danger',
+  canceled: 'neutral',
+}
+
+// The flagged field name shown in the review UI does not always match the
+// key(s) the extraction payload uses for it — `merchant` is the gate's field
+// name, but it covers both the raw merchant name and the branch address. This
+// maps the two so the "everything else" section does not repeat what is
+// already expanded.
+const FIELD_TO_EXTRACTED_KEYS: Record<string, string[]> = {
+  merchant: ['merchant_name', 'merchant_address'],
 }
 
 interface ExtractedItem {
@@ -47,10 +60,12 @@ export default defineComponent({
     AppButton,
     AppInput,
     AppEmptyState,
+    AppBadge,
     ConfirmDialog,
     FindingList,
     ReviewFieldRow,
     CandidatePicker,
+    MerchantResolver,
   },
 
   setup() {
@@ -79,7 +94,20 @@ export default defineComponent({
       return String(this.$route.params.hashId)
     },
 
+    // A decided receipt keeps its last review_request artifact around
+    // (nothing supersedes it once the run stops holding), so `fields` would
+    // otherwise still report the pre-decision flags forever. Editing is only
+    // ever offered while a decision is still pending.
+    isPendingDecision(): boolean {
+      return this.receipt?.status === 'needs_review'
+    },
+
+    statusVariant(): BadgeVariant {
+      return this.receipt ? STATUS_VARIANTS[this.receipt.status] : 'neutral'
+    },
+
     fields(): string[] {
+      if (!this.isPendingDecision) return []
       return this.receipt?.review_request?.fields ?? []
     },
 
@@ -90,11 +118,6 @@ export default defineComponent({
     extractedItems(): ExtractedItem[] {
       const raw = this.receipt?.extracted?.items
       return Array.isArray(raw) ? (raw as ExtractedItem[]) : []
-    },
-
-    merchantAcceptedId(): number | null {
-      if (typeof this.values.merchant_id === 'number') return this.values.merchant_id
-      return this.receipt?.candidates.merchant?.accepted_id ?? null
     },
 
     // The AppInput bound to this field displays major units and stores minor
@@ -114,7 +137,9 @@ export default defineComponent({
 
     otherEntries(): Array<[string, unknown]> {
       const extracted = this.receipt?.extracted ?? {}
-      const covered = new Set(this.fields.map((field) => FIELD_TO_EXTRACTED_KEY[field] ?? field))
+      const covered = new Set(
+        this.fields.flatMap((field) => FIELD_TO_EXTRACTED_KEYS[field] ?? [field]),
+      )
       // Shown in the items reconciliation strip instead, once items are expanded.
       if (this.fields.includes('items')) covered.add('discount_minor')
       return Object.entries(extracted).filter(([key]) => !covered.has(key))
@@ -263,6 +288,24 @@ export default defineComponent({
       return String(value)
     },
 
+    // Reading straight from `extracted` (rather than the editable `values`)
+    // for the read-only summary — that record holds what was decided.
+    extractedText(key: string): string {
+      return this.formatValue(this.receipt?.extracted?.[key])
+    },
+
+    extractedMoney(key: string): string {
+      const value = this.receipt?.extracted?.[key]
+      return typeof value === 'number' ? this.formatMoney(value) : '—'
+    },
+
+    consumptionText(): string {
+      const value = this.receipt?.extracted?.consumption
+      if (typeof value !== 'number') return '—'
+      const unit = this.receipt?.extracted?.consumption_unit
+      return typeof unit === 'string' ? `${value} ${unit}` : String(value)
+    },
+
     genericValue(field: string): string {
       const raw = this.values[field]
       if (typeof raw === 'string') return raw
@@ -274,14 +317,14 @@ export default defineComponent({
       this.values[field] = value
     },
 
-    selectMerchant(id: number) {
-      this.values.merchant_id = id
-      delete this.values.merchant_name
-    },
-
-    createMerchant(name: string) {
-      this.values.merchant_name = name
-      delete this.values.merchant_id
+    // The resolver owns the merchant/location half of `values` and hands back
+    // the whole thing each time, so a key it dropped (e.g. merchant_id after
+    // switching to "create new") disappears here too.
+    applyMerchantValues(next: Record<string, unknown>) {
+      for (const key of ['merchant_id', 'merchant_name', 'location_hash_id', 'location_address']) {
+        delete this.values[key]
+      }
+      Object.assign(this.values, next)
     },
 
     productCandidatesFor(index: number): Candidate[] {
@@ -366,7 +409,7 @@ export default defineComponent({
       :description="t('receipts.review.subheading')"
     />
 
-    <template v-if="receipt !== null && receipt.status !== 'needs_review'">
+    <template v-if="receipt !== null && !isPendingDecision && receipt.extracted === null">
       <AppCard>
         <p class="text-sm text-neutral-600">{{ t('receipts.review.notAwaiting') }}</p>
         <RouterLink :to="{ name: 'receipts' }" class="text-sm text-accent hover:text-accent-600">
@@ -391,19 +434,93 @@ export default defineComponent({
         </div>
 
         <div class="flex min-w-0 flex-col gap-4 md:w-1/2">
+          <AppCard v-if="!isPendingDecision">
+            <div class="flex items-center justify-between">
+              <AppBadge :variant="statusVariant">{{
+                t(`receipts.status.${receipt.status}`)
+              }}</AppBadge>
+              <RouterLink
+                v-if="receipt.transaction_hash_id"
+                :to="{
+                  name: 'transaction-detail',
+                  params: { hashId: receipt.transaction_hash_id },
+                }"
+                class="text-sm text-accent hover:text-accent-600"
+              >
+                {{ t('receipts.review.viewTransaction') }}
+              </RouterLink>
+            </div>
+          </AppCard>
+
           <AppCard :title="t('pipeline.detail.findings')">
             <FindingList :findings="findings" />
           </AppCard>
 
-          <AppCard v-if="fields.length > 0">
+          <AppCard v-if="!isPendingDecision" :title="t('receipts.review.summaryTitle')">
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <template v-if="receipt.doc_type === 'utility_bill'">
+                <dt class="text-neutral-500">{{ fieldLabel('provider_name') }}</dt>
+                <dd>{{ extractedText('provider_name') }}</dd>
+                <dt class="text-neutral-500">{{ fieldLabel('customer_reference') }}</dt>
+                <dd>{{ extractedText('customer_reference') }}</dd>
+                <dt class="text-neutral-500">{{ fieldLabel('issued_at') }}</dt>
+                <dd>{{ extractedText('issued_at') }}</dd>
+                <dt class="text-neutral-500">{{ fieldLabel('period_start') }}</dt>
+                <dd>{{ extractedText('period_start') }}</dd>
+                <dt class="text-neutral-500">{{ fieldLabel('period_end') }}</dt>
+                <dd>{{ extractedText('period_end') }}</dd>
+                <dt class="text-neutral-500">{{ fieldLabel('meter_reading') }}</dt>
+                <dd>{{ extractedText('meter_reading') }}</dd>
+                <dt class="text-neutral-500">{{ fieldLabel('consumption') }}</dt>
+                <dd>{{ consumptionText() }}</dd>
+                <dt class="text-neutral-500">{{ t('receipts.fields.total_minor') }}</dt>
+                <dd>{{ extractedMoney('total_minor') }}</dd>
+              </template>
+              <template v-else>
+                <dt class="text-neutral-500">{{ fieldLabel('merchant_name') }}</dt>
+                <dd>{{ extractedText('merchant_name') }}</dd>
+                <dt class="text-neutral-500">{{ fieldLabel('merchant_address') }}</dt>
+                <dd>{{ extractedText('merchant_address') }}</dd>
+                <dt class="text-neutral-500">{{ t('receipts.fields.occurred_at') }}</dt>
+                <dd>{{ extractedText('occurred_at') }}</dd>
+                <dt class="text-neutral-500">{{ t('receipts.fields.payment_method') }}</dt>
+                <dd>{{ extractedText('payment_method') }}</dd>
+                <dt class="text-neutral-500">{{ t('receipts.fields.total_minor') }}</dt>
+                <dd>{{ extractedMoney('total_minor') }}</dd>
+                <template v-if="typeof receipt.extracted?.discount_minor === 'number'">
+                  <dt class="text-neutral-500">{{ t('receipts.review.discount') }}</dt>
+                  <dd>{{ extractedMoney('discount_minor') }}</dd>
+                </template>
+              </template>
+            </dl>
+
+            <div v-if="extractedItems.length > 0" class="mt-3 flex flex-col gap-1.5">
+              <div
+                v-for="(item, index) in extractedItems"
+                :key="index"
+                class="flex items-baseline justify-between gap-2 rounded-sm border border-divider p-2"
+              >
+                <p class="text-xs text-neutral-700">
+                  {{ item.description }} · {{ item.quantity }}{{ item.unit ? ` ${item.unit}` : '' }}
+                </p>
+                <p class="whitespace-nowrap text-xs font-medium text-neutral-700">
+                  {{ formatMoney(itemLineTotalMinor(item)) }}
+                </p>
+              </div>
+            </div>
+          </AppCard>
+
+          <AppCard v-if="isPendingDecision && fields.length > 0">
             <ReviewFieldRow v-for="field in fields" :key="field" :field="field" flagged>
-              <CandidatePicker
+              <MerchantResolver
                 v-if="field === 'merchant'"
-                :candidates="receipt.candidates.merchant?.candidates ?? []"
-                :accepted-id="merchantAcceptedId"
+                :merchant-candidates="receipt.candidates.merchant?.candidates ?? []"
+                :merchant-accepted-id="receipt.candidates.merchant?.accepted_id ?? null"
                 :raw-name="receipt.candidates.merchant?.raw_name ?? null"
-                @select="selectMerchant"
-                @create="createMerchant"
+                :location-candidates="receipt.candidates.location?.candidates ?? []"
+                :location-accepted-hash-id="receipt.candidates.location?.accepted_hash_id ?? null"
+                :raw-address="receipt.candidates.location?.raw_address ?? null"
+                @update:values="applyMerchantValues"
               />
 
               <AppInput
@@ -485,7 +602,7 @@ export default defineComponent({
             </ReviewFieldRow>
           </AppCard>
 
-          <AppCard v-if="otherEntries.length > 0" :padded="false">
+          <AppCard v-if="isPendingDecision && otherEntries.length > 0" :padded="false">
             <details class="px-5 py-4">
               <summary class="cursor-pointer text-sm font-medium">
                 {{ t('receipts.review.othersTitle') }}
@@ -501,7 +618,7 @@ export default defineComponent({
 
           <p v-if="error" class="text-sm text-danger-700">{{ error }}</p>
 
-          <div class="flex justify-end gap-2">
+          <div v-if="isPendingDecision" class="flex justify-end gap-2">
             <AppButton variant="ghost" :disabled="isSubmitting" @click="isRejectOpen = true">
               {{ t('receipts.review.reject') }}
             </AppButton>

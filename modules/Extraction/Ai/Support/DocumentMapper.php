@@ -28,6 +28,7 @@ final class DocumentMapper
 
         return new ExtractedReceipt(
             merchantName: self::string($payload['merchant_name'] ?? null),
+            merchantAddress: self::string($payload['merchant_address'] ?? null),
             occurredAt: self::date($payload['occurred_at'] ?? null),
             currency: self::string($payload['currency'] ?? null),
             totalMinor: self::int($payload['total_minor'] ?? null),

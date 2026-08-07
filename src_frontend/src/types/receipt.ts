@@ -16,6 +16,13 @@ export interface Candidate {
   score: number
 }
 
+export interface LocationCandidate {
+  id: number
+  hash_id: string
+  name: string
+  score: number
+}
+
 export interface ReceiptFinding {
   code: string
   severity: 'info' | 'warning' | 'blocker'
@@ -53,7 +60,12 @@ export interface ReceiptDetail extends Receipt {
       accepted_id: number | null
       candidates: Candidate[]
     } | null
-    location: { accepted_id: number | null; candidates: Candidate[] } | null
+    location: {
+      raw_address: string | null
+      accepted_id: number | null
+      accepted_hash_id: string | null
+      candidates: LocationCandidate[]
+    } | null
     products: {
       items: Array<{
         item_index: number

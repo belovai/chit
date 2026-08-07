@@ -37,6 +37,7 @@ final class ValueObjectTest extends TestCase
     {
         $receipt = new ExtractedReceipt(
             merchantName: 'ALDI',
+            merchantAddress: null,
             occurredAt: CarbonImmutable::parse('2026-07-30 14:12:00'),
             currency: 'HUF',
             totalMinor: 132700,

@@ -72,6 +72,27 @@ final class DocumentMapperTest extends TestCase
     }
 
     #[Test]
+    public function it_maps_the_branch_address(): void
+    {
+        $receipt = DocumentMapper::toReceipt([
+            'merchant_name' => 'SPAR',
+            'merchant_address' => '6723 Szeged, Szilléri sugár út 26.',
+            'items' => [],
+        ]);
+
+        $this->assertSame('SPAR', $receipt->merchantName);
+        $this->assertSame('6723 Szeged, Szilléri sugár út 26.', $receipt->merchantAddress);
+    }
+
+    #[Test]
+    public function a_missing_branch_address_maps_to_null(): void
+    {
+        $receipt = DocumentMapper::toReceipt(['merchant_name' => 'SPAR', 'items' => []]);
+
+        $this->assertNull($receipt->merchantAddress);
+    }
+
+    #[Test]
     public function it_maps_a_utility_bill_payload(): void
     {
         $bill = DocumentMapper::toBill([

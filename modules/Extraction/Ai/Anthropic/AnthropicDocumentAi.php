@@ -91,7 +91,7 @@ class AnthropicDocumentAi implements DocumentClassifier, DocumentExtractor
     /**
      * The single seam that touches the vendor SDK. Tests override this.
      *
-     * @param  string|list<array<string, mixed>>  $user
+     * @param  string|list<non-empty-array<string, mixed>>  $user
      * @param  array<string, mixed>  $schema
      * @return array{payload: array<string, mixed>, usage: AiUsage}
      */
@@ -102,6 +102,7 @@ class AnthropicDocumentAi implements DocumentClassifier, DocumentExtractor
         try {
             $message = $this->client()->messages->create(
                 maxTokens: (int) config('extraction.ai.max_tokens'),
+                // @phpstan-ignore argument.type (SDK's MessageParam union can't express our string|list<block> shape precisely)
                 messages: [['role' => 'user', 'content' => $user]],
                 // The system prompt is byte-identical across every document of a
                 // given type, so caching it turns most of the input into a

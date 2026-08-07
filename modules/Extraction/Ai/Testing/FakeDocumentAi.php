@@ -121,6 +121,7 @@ final class FakeDocumentAi implements DocumentClassifier, DocumentExtractor
 
         $document = self::$document ?? new ExtractedReceipt(
             merchantName: 'FAKE',
+            merchantAddress: null,
             occurredAt: null,
             currency: 'HUF',
             totalMinor: 0,
@@ -149,6 +150,7 @@ final class FakeDocumentAi implements DocumentClassifier, DocumentExtractor
     {
         return [
             'merchant_name' => $document->merchantName,
+            'merchant_address' => $document->merchantAddress,
             'occurred_at' => $document->occurredAt?->toIso8601String(),
             'currency' => $document->currency,
             'total_minor' => $document->totalMinor,

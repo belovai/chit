@@ -100,6 +100,11 @@ final class ReviewGateStep implements PipelineStep
             'date_in_future' => ['occurred_at'],
             'merchant_ambiguous' => ['merchant'],
             'new_merchant' => ['merchant'],
+            // One field for both decisions: the review UI renders merchant and
+            // location as two rows of a single card, because a branch is only
+            // meaningful under a merchant.
+            'new_location' => ['merchant'],
+            'location_ambiguous' => ['merchant'],
             'possible_duplicate' => ['occurred_at', 'total_minor'],
             'exact_duplicate' => [],
             'classification_uncertain' => ['doc_type'],

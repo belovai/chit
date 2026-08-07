@@ -29,6 +29,8 @@ return [
             'meter_reading_decreased' => 'blocker',
             'merchant_ambiguous' => 'warning',
             'new_merchant' => 'warning',
+            'new_location' => 'warning',
+            'location_ambiguous' => 'warning',
             'low_ocr_confidence' => 'warning',
             'consumption_anomaly' => 'warning',
             'period_gap' => 'warning',
@@ -46,6 +48,11 @@ return [
         // Two candidates within this distance of each other are ambiguous.
         'merchant_ambiguity_margin' => env('RECEIPT_MERCHANT_AMBIGUITY_MARGIN', 0.10),
         'product_accept_score' => env('RECEIPT_PRODUCT_ACCEPT_SCORE', 0.75),
+        // Higher than the merchant threshold on purpose: two branches in the
+        // same town read almost alike, and a wrong auto-accept books the
+        // transaction to the wrong shop without ever asking.
+        'location_accept_score' => env('RECEIPT_LOCATION_ACCEPT_SCORE', 0.85),
+        'location_ambiguity_margin' => env('RECEIPT_LOCATION_AMBIGUITY_MARGIN', 0.10),
     ],
 
     'anomaly' => [

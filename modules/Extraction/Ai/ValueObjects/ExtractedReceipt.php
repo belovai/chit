@@ -13,6 +13,7 @@ final readonly class ExtractedReceipt
      */
     public function __construct(
         public ?string $merchantName,
+        public ?string $merchantAddress,
         public ?CarbonImmutable $occurredAt,
         public ?string $currency,
         public ?int $totalMinor,

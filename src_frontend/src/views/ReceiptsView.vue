@@ -225,11 +225,16 @@ export default defineComponent({
 
               <div class="shrink-0">
                 <AppButton
-                  v-if="receipt.status === 'needs_review'"
+                  v-if="receipt.status !== 'pending' && receipt.status !== 'processing'"
                   size="sm"
+                  :variant="receipt.status === 'needs_review' ? 'primary' : 'ghost'"
                   @click="review(receipt)"
                 >
-                  {{ t('receipts.review.title') }}
+                  {{
+                    receipt.status === 'needs_review'
+                      ? t('receipts.review.title')
+                      : t('receipts.view')
+                  }}
                 </AppButton>
               </div>
             </div>

@@ -7,17 +7,20 @@ namespace Modules\Receipt\Tests\Feature;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Modules\Extraction\Ai\Testing\FakeDocumentAi;
 use Modules\Extraction\Ai\ValueObjects\ExtractedLineItem;
 use Modules\Extraction\Ai\ValueObjects\ExtractedReceipt;
 use Modules\Extraction\Enums\DocumentType;
 use Modules\Extraction\Ocr\Testing\FakeOcrEngine;
 use Modules\Merchant\Models\Merchant;
+use Modules\Merchant\Models\MerchantLocation;
 use Modules\Pipeline\Actions\ResumeRun;
 use Modules\Pipeline\Actions\StartRun;
 use Modules\Pipeline\Enums\ArtifactKind;
 use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\ValueObjects\PendingArtifact;
+use Modules\Receipt\Actions\ReviewReceipt;
 use Modules\Receipt\Enums\ReceiptStatus;
 use Modules\Receipt\Models\Receipt;
 use Modules\Transaction\Models\Transaction;
@@ -42,14 +45,29 @@ final class PipelineEndToEndTest extends TestCase
 
     private function receiptFor(User $user): Receipt
     {
-        Storage::disk('local')->put('receipts/a.png', (string) file_get_contents(
+        // A fresh hash per call: two receipts from the same user must not
+        // collide on dedupe_file_hash just because both tests reuse the same
+        // fixture image.
+        $suffix = (string) Str::uuid();
+        $path = "receipts/{$suffix}.png";
+
+        Storage::disk('local')->put($path, (string) file_get_contents(
             base_path('modules/Extraction/Tests/Support/fixtures/aldi-receipt.png'),
         ));
 
         return Receipt::factory()->for($user, 'owner')->create([
-            'disk' => 'local', 'path' => 'receipts/a.png', 'mime' => 'image/png',
-            'file_hash' => 'hash-a', 'status' => ReceiptStatus::Pending,
+            'disk' => 'local', 'path' => $path, 'mime' => 'image/png',
+            'file_hash' => $suffix, 'status' => ReceiptStatus::Pending,
         ]);
+    }
+
+    private function uploadAndRun(User $user): Receipt
+    {
+        $receipt = $this->receiptFor($user);
+
+        app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt);
+
+        return $receipt->refresh();
     }
 
     private function primeReceiptExtraction(): void
@@ -58,6 +76,7 @@ final class PipelineEndToEndTest extends TestCase
         FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
         FakeDocumentAi::willExtract(new ExtractedReceipt(
             merchantName: 'ALDI',
+            merchantAddress: '6723 Szeged, Szilléri sugár út 26.',
             occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
             currency: 'HUF',
             totalMinor: 132700,
@@ -72,15 +91,15 @@ final class PipelineEndToEndTest extends TestCase
     public function a_clean_receipt_from_a_known_merchant_commits_without_a_human(): void
     {
         $user = User::factory()->create();
-        Merchant::factory()->for($user, 'owner')->create(['name' => 'ALDI']);
-        $receipt = $this->receiptFor($user);
+        $merchant = Merchant::factory()->for($user, 'owner')->create(['name' => 'ALDI']);
+        // The branch must already be on file too, or the new location-matching
+        // gate has something genuinely new to ask about.
+        MerchantLocation::factory()->for($merchant)->create(['address' => '6723 Szeged, Szilléri sugár út 26.']);
         $this->primeReceiptExtraction();
 
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt);
-        $run->refresh();
-        $receipt->refresh();
+        $receipt = $this->uploadAndRun($user);
 
-        $this->assertSame(RunStatus::Succeeded, $run->status);
+        $this->assertSame(RunStatus::Succeeded, $receipt->currentRun?->status);
         $this->assertSame(ReceiptStatus::Approved, $receipt->status);
         $this->assertNotNull($receipt->transaction_id);
 
@@ -94,14 +113,13 @@ final class PipelineEndToEndTest extends TestCase
     public function an_unknown_merchant_parks_the_run_for_review(): void
     {
         $user = User::factory()->create();
-        $receipt = $this->receiptFor($user);
         $this->primeReceiptExtraction();
 
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt);
-        $run->refresh();
+        $receipt = $this->uploadAndRun($user);
+        $run = $receipt->currentRun;
 
-        $this->assertSame(RunStatus::AwaitingManual, $run->status);
-        $this->assertSame(ReceiptStatus::NeedsReview, $receipt->refresh()->status);
+        $this->assertSame(RunStatus::AwaitingManual, $run?->status);
+        $this->assertSame(ReceiptStatus::NeedsReview, $receipt->status);
         $this->assertNull($receipt->transaction_id);
 
         $request = $run->artifacts()->where('key', 'review_request')->whereNull('superseded_at')->firstOrFail();
@@ -113,9 +131,9 @@ final class PipelineEndToEndTest extends TestCase
     public function approving_a_parked_run_creates_the_merchant_and_the_transaction(): void
     {
         $user = User::factory()->create();
-        $receipt = $this->receiptFor($user);
         $this->primeReceiptExtraction();
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+        $receipt = $this->uploadAndRun($user);
+        $run = $receipt->currentRun;
 
         app(ResumeRun::class)->approve($run, [
             new PendingArtifact('review_decision', ArtifactKind::Json, [
@@ -140,11 +158,11 @@ final class PipelineEndToEndTest extends TestCase
     public function a_discount_corrected_during_review_is_what_the_transaction_records(): void
     {
         $user = User::factory()->create();
-        $receipt = $this->receiptFor($user);
         FakeOcrEngine::returns("ALDI\nTej 2 db 389\nOSSZESEN 1127", 0.94);
         FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
         FakeDocumentAi::willExtract(new ExtractedReceipt(
             merchantName: 'ALDI',
+            merchantAddress: null,
             occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
             currency: 'HUF',
             totalMinor: 112700,
@@ -156,7 +174,8 @@ final class PipelineEndToEndTest extends TestCase
                 new ExtractedLineItem('Kenyer', 1.0, 'db', 54900, 54900)],
         ), 0.94);
 
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+        $receipt = $this->uploadAndRun($user);
+        $run = $receipt->currentRun;
 
         app(ResumeRun::class)->approve($run, [
             new PendingArtifact('review_decision', ArtifactKind::Json, [
@@ -174,11 +193,11 @@ final class PipelineEndToEndTest extends TestCase
     public function a_discount_cleared_during_review_is_not_recorded_at_all(): void
     {
         $user = User::factory()->create();
-        $receipt = $this->receiptFor($user);
         FakeOcrEngine::returns("ALDI\nTej 2 db 389\nOSSZESEN 1127", 0.94);
         FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
         FakeDocumentAi::willExtract(new ExtractedReceipt(
             merchantName: 'ALDI',
+            merchantAddress: null,
             occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
             currency: 'HUF',
             totalMinor: 112700,
@@ -188,7 +207,8 @@ final class PipelineEndToEndTest extends TestCase
                 new ExtractedLineItem('Kenyer', 1.0, 'db', 54900, 54900)],
         ), 0.94);
 
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+        $receipt = $this->uploadAndRun($user);
+        $run = $receipt->currentRun;
 
         app(ResumeRun::class)->approve($run, [
             new PendingArtifact('review_decision', ArtifactKind::Json, [
@@ -206,9 +226,9 @@ final class PipelineEndToEndTest extends TestCase
     public function rejecting_a_parked_run_creates_nothing(): void
     {
         $user = User::factory()->create();
-        $receipt = $this->receiptFor($user);
         $this->primeReceiptExtraction();
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+        $receipt = $this->uploadAndRun($user);
+        $run = $receipt->currentRun;
 
         app(ResumeRun::class)->reject($run, [
             new PendingArtifact('review_decision', ArtifactKind::Json, ['decision' => 'reject']),
@@ -225,17 +245,17 @@ final class PipelineEndToEndTest extends TestCase
     {
         $user = User::factory()->create();
         Merchant::factory()->for($user, 'owner')->create(['name' => 'ALDI']);
-        $receipt = $this->receiptFor($user);
         FakeOcrEngine::returns('ALDI ...', 0.94);
         FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
         FakeDocumentAi::willExtract(new ExtractedReceipt(
-            'ALDI', CarbonImmutable::parse('2026-07-30'), 'HUF', 999900, null, 'card',
+            'ALDI', null, CarbonImmutable::parse('2026-07-30'), 'HUF', 999900, null, 'card',
             [new ExtractedLineItem('Tej', 2.0, 'db', 38900, 77800)],
         ), 0.94);
 
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt)->refresh();
+        $receipt = $this->uploadAndRun($user);
+        $run = $receipt->currentRun;
 
-        $this->assertSame(RunStatus::AwaitingManual, $run->status);
+        $this->assertSame(RunStatus::AwaitingManual, $run?->status);
         $request = $run->artifacts()->where('key', 'review_request')->whereNull('superseded_at')->firstOrFail();
         $this->assertContains('line_items_sum_mismatch', $request->payload['blockers']);
     }
@@ -253,5 +273,55 @@ final class PipelineEndToEndTest extends TestCase
         $this->assertSame(RunStatus::Failed, $run->status);
         $this->assertSame(ReceiptStatus::Failed, $receipt->refresh()->status);
         $this->assertSame('store_file', $run->error_summary['step_key']);
+    }
+
+    #[Test]
+    public function the_second_receipt_from_a_known_branch_needs_no_review(): void
+    {
+        $user = User::factory()->create();
+
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'SPAR',
+            merchantAddress: '6723 Szeged, Szilléri sugár út 26.',
+            occurredAt: CarbonImmutable::parse('2026-07-30 10:35:00'),
+            currency: 'HUF',
+            totalMinor: 190000,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [],
+        ));
+
+        // First run: brand new merchant and brand new branch, so it parks.
+        $first = $this->uploadAndRun($user);
+        $this->assertSame('needs_review', $first->refresh()->status->value);
+
+        app(ReviewReceipt::class)->approve($first->refresh(), [
+            'merchant_name' => 'SPAR',
+            'location_address' => '6723 Szeged, Szilléri sugár út 26.',
+        ]);
+
+        $this->assertSame(1, Merchant::query()->count());
+        $this->assertSame(1, MerchantLocation::query()->count());
+
+        // Second run: same shop, same branch, but a different purchase — same
+        // date/total as the first would be dedupe_content's job to catch, not
+        // this test's.
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'SPAR',
+            merchantAddress: '6723 Szeged, Szilléri sugár út 26.',
+            occurredAt: CarbonImmutable::parse('2026-07-31 09:10:00'),
+            currency: 'HUF',
+            totalMinor: 250000,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [],
+        ));
+
+        $second = $this->uploadAndRun($user);
+
+        $this->assertSame('approved', $second->refresh()->status->value);
+        $this->assertSame(1, Merchant::query()->count());
+        $this->assertSame(1, MerchantLocation::query()->count());
+        $this->assertNotNull($second->refresh()->transaction_id);
     }
 }

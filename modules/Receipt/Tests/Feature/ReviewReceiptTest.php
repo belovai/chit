@@ -38,7 +38,7 @@ final class ReviewReceiptTest extends TestCase
         FakeOcrEngine::returns('ALDI ...', 0.94);
         FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
         FakeDocumentAi::willExtract(new ExtractedReceipt(
-            'ALDI', CarbonImmutable::parse('2026-07-30 14:12'), 'HUF', 132700, null, 'card',
+            'ALDI', null, CarbonImmutable::parse('2026-07-30 14:12'), 'HUF', 132700, null, 'card',
             [new ExtractedLineItem('Tej 2.8%', 2.0, 'db', 38900, 77800)],
         ), 0.94);
 

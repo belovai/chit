@@ -6,12 +6,14 @@ namespace Modules\Merchant\Models;
 
 use App\Traits\UsesHashId;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 use Modules\Merchant\Database\Factories\MerchantLocationFactory;
+use Modules\Merchant\Services\AddressNormalizer;
 
 /**
  * @property int $id
@@ -24,6 +26,7 @@ use Modules\Merchant\Database\Factories\MerchantLocationFactory;
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property string|null $normalized_address
  * @property-read Merchant|null $merchant
  *
  * @method static \Modules\Merchant\Database\Factories\MerchantLocationFactory factory($count = null, $state = [])
@@ -40,6 +43,7 @@ use Modules\Merchant\Database\Factories\MerchantLocationFactory;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MerchantLocation whereLatitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MerchantLocation whereLongitude($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MerchantLocation whereMerchantId($value)
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|MerchantLocation whereNormalizedAddress($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MerchantLocation whereUpdatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MerchantLocation withTrashed(bool $withTrashed = true)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|MerchantLocation withoutTrashed()
@@ -66,6 +70,23 @@ final class MerchantLocation extends Model
         'latitude' => 'float',
         'longitude' => 'float',
     ];
+
+    /**
+     * Writing the address also writes its comparison key. This lives on the
+     * model rather than in the actions so that every write path — pipeline,
+     * settings UI, factory, seeder — stays consistent by construction.
+     *
+     * @return Attribute<string|null, array{address: string|null, normalized_address: string|null}>
+     */
+    protected function address(): Attribute
+    {
+        return Attribute::make(
+            set: static fn (?string $value): array => [
+                'address' => $value,
+                'normalized_address' => AddressNormalizer::normalize($value),
+            ],
+        );
+    }
 
     /**
      * @return BelongsTo<Merchant, $this>

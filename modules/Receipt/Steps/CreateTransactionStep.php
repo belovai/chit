@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\DB;
 use Modules\Extraction\Ai\ValueObjects\ExtractedBill;
 use Modules\Extraction\Ai\ValueObjects\ExtractedReceipt;
 use Modules\Merchant\Actions\CreateMerchant;
+use Modules\Merchant\Actions\CreateMerchantLocation;
+use Modules\Merchant\Models\Merchant;
+use Modules\Merchant\Models\MerchantLocation;
+use Modules\Merchant\Services\AddressNormalizer;
 use Modules\Pipeline\Contracts\PipelineStep;
 use Modules\Pipeline\Exceptions\StepException;
 use Modules\Pipeline\ValueObjects\StepContext;
@@ -28,6 +32,7 @@ final class CreateTransactionStep implements PipelineStep
     public function __construct(
         private readonly CreateTransaction $createTransaction,
         private readonly CreateMerchant $createMerchant,
+        private readonly CreateMerchantLocation $createMerchantLocation,
         private readonly CreateProduct $createProduct,
     ) {}
 
@@ -57,9 +62,9 @@ final class CreateTransactionStep implements PipelineStep
         /** @var array<string, mixed> $overrides */
         $overrides = $decision['values'] ?? [];
 
-        $merchantId = $this->resolveMerchant($context, $document, $overrides);
+        $merchant = $this->resolveMerchant($context, $document, $overrides);
 
-        if ($merchantId === null) {
+        if ($merchant === null) {
             return StepResult::failure(StepException::permanent('No merchant could be resolved for this document.'));
         }
 
@@ -81,10 +86,10 @@ final class CreateTransactionStep implements PipelineStep
             ? (array_key_exists('discount_minor', $overrides) ? $overrides['discount_minor'] : $document->discountMinor)
             : null;
 
-        $transaction = DB::transaction(function () use ($context, $document, $isBill, $merchantId, $overrides, $total, $occurredAt, $discount) {
+        $transaction = DB::transaction(function () use ($context, $document, $isBill, $merchant, $overrides, $total, $occurredAt, $discount) {
             return $this->createTransaction->handle($context->ownerId(), [
-                'merchant_id' => $merchantId,
-                'location_id' => $context->artifactOrNull('location_candidate')?->json()['accepted_id'] ?? null,
+                'merchant_id' => $merchant->id,
+                'location_id' => $this->resolveLocation($context, $merchant, $overrides),
                 'currency' => (string) ($overrides['currency'] ?? $document->currency ?? 'HUF'),
                 'source' => 'receipt',
                 'payment_method' => $document instanceof ExtractedReceipt
@@ -114,15 +119,19 @@ final class CreateTransactionStep implements PipelineStep
         StepContext $context,
         ExtractedReceipt|ExtractedBill $document,
         array $overrides,
-    ): ?int {
+    ): ?Merchant {
         if (isset($overrides['merchant_id']) && is_numeric($overrides['merchant_id'])) {
-            return (int) $overrides['merchant_id'];
+            return Merchant::query()
+                ->where('owner_id', $context->ownerId())
+                ->find((int) $overrides['merchant_id']);
         }
 
         $candidates = $context->artifactOrNull('merchant_candidates')?->json() ?? [];
 
         if (isset($candidates['accepted_id']) && is_numeric($candidates['accepted_id'])) {
-            return (int) $candidates['accepted_id'];
+            return Merchant::query()
+                ->where('owner_id', $context->ownerId())
+                ->find((int) $candidates['accepted_id']);
         }
 
         // A new merchant is only created here, on approval — the matching step
@@ -135,7 +144,60 @@ final class CreateTransactionStep implements PipelineStep
             return null;
         }
 
-        return $this->createMerchant->handle($context->ownerId(), ['name' => trim($name)])->id;
+        return $this->createMerchant->handle($context->ownerId(), ['name' => trim($name)]);
+    }
+
+    /**
+     * The reviewer's decision is read in three layers: an explicit pick (which
+     * may be an explicit "none"), then a typed address, then whatever the
+     * matching step accepted. `array_key_exists` rather than `??`, because
+     * clearing the field is a statement, not an absence.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    private function resolveLocation(StepContext $context, Merchant $merchant, array $overrides): ?int
+    {
+        if (array_key_exists('location_hash_id', $overrides)) {
+            $hashId = $overrides['location_hash_id'];
+
+            if (!is_string($hashId) || $hashId === '') {
+                return null;
+            }
+
+            return MerchantLocation::query()
+                ->where('merchant_id', $merchant->id)
+                ->where('hash_id', $hashId)
+                ->first()?->id;
+        }
+
+        $address = is_string($overrides['location_address'] ?? null) ? trim($overrides['location_address']) : '';
+
+        if ($address !== '') {
+            $normalized = AddressNormalizer::normalize($address);
+
+            // The reviewer may spell a branch we already know differently
+            // ("Szilleri sgt." vs "Szilléri sugár út"); the normalized key is
+            // what decides whether this is the same row.
+            $existing = $normalized === null ? null : MerchantLocation::query()
+                ->where('merchant_id', $merchant->id)
+                ->where('normalized_address', $normalized)
+                ->first();
+
+            if ($existing !== null) {
+                return $existing->id;
+            }
+
+            return $this->createMerchantLocation->handle($merchant, [
+                'is_online' => false,
+                'address' => $address,
+                'latitude' => null,
+                'longitude' => null,
+            ])->id;
+        }
+
+        $acceptedId = $context->artifactOrNull('location_candidate')?->json()['accepted_id'] ?? null;
+
+        return is_numeric($acceptedId) ? (int) $acceptedId : null;
     }
 
     /**

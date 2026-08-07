@@ -28,13 +28,20 @@ final class ReceiptPrompt
             - A discount printed as a negative line is not a line item — put it in
               discount_minor as a positive number.
             - Deposit/bottle-return lines (BETETDIJ, GONGYOLEG) are line items.
-            - A header can span several lines: the legal company name, its
-              registered office, then the specific branch's own address or an
-              internal store/till code (short and mostly digits, e.g. "617 SM
-              Szeged Szilleri sg"). merchant_name is the brand name (e.g. "SPAR"),
-              plus the branch's city or street if one is printed right next to
-              the brand (e.g. "OMV Hodmezovasarhely 2"). Never use an internal
-              store/till code alone as merchant_name.
+            - A header can span several lines. Split it into two fields:
+              merchant_name is the brand alone, taken from the legal company
+              name with the company form (KFT., ZRT., BT.) and any branch
+              marker removed — "SPAR MAGYARORSZAG KERESKEDELMI KFT." is "SPAR",
+              "OMV Hodmezovasarhely 2" is "OMV".
+            - merchant_address is the branch's own street address: the LAST
+              address block in the header. When two addresses are printed, the
+              one immediately following the legal company name is the
+              registered office — discard it and keep the other. When only one
+              address is printed, that is the branch.
+            - A short, mostly numeric internal store or till code (e.g. "617 SM
+              Szeged Szilleri sg") is neither a name nor an address. Ignore it.
+            - If no branch address can be told apart with confidence, set
+              merchant_address to null. Never guess one.
             - Set confidence low when the text is badly damaged, the total is missing,
               or the line items clearly do not add up.
             PROMPT;
