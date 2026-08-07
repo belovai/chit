@@ -89,7 +89,7 @@ final class CreateTransactionStep implements PipelineStep
         $transaction = DB::transaction(function () use ($context, $document, $isBill, $merchant, $overrides, $total, $occurredAt, $discount) {
             return $this->createTransaction->handle($context->ownerId(), [
                 'merchant_id' => $merchant->id,
-                'location_id' => $this->resolveLocation($context, $merchant, $overrides),
+                'location_id' => $this->resolveLocation($context, $document, $merchant, $overrides),
                 'currency' => (string) ($overrides['currency'] ?? $document->currency ?? 'HUF'),
                 'source' => 'receipt',
                 'payment_method' => $document instanceof ExtractedReceipt
@@ -148,15 +148,20 @@ final class CreateTransactionStep implements PipelineStep
     }
 
     /**
-     * The reviewer's decision is read in three layers: an explicit pick (which
+     * The reviewer's decision is read in four layers: an explicit pick (which
      * may be an explicit "none"), then a typed address, then whatever the
-     * matching step accepted. `array_key_exists` rather than `??`, because
-     * clearing the field is a statement, not an absence.
+     * matching step accepted, and finally the address read off the picture.
+     * `array_key_exists` rather than `??`, because clearing the field is a
+     * statement, not an absence.
      *
      * @param  array<string, mixed>  $overrides
      */
-    private function resolveLocation(StepContext $context, Merchant $merchant, array $overrides): ?int
-    {
+    private function resolveLocation(
+        StepContext $context,
+        ExtractedReceipt|ExtractedBill $document,
+        Merchant $merchant,
+        array $overrides,
+    ): ?int {
         if (array_key_exists('location_hash_id', $overrides)) {
             $hashId = $overrides['location_hash_id'];
 
@@ -170,34 +175,66 @@ final class CreateTransactionStep implements PipelineStep
                 ->first()?->id;
         }
 
-        $address = is_string($overrides['location_address'] ?? null) ? trim($overrides['location_address']) : '';
+        $typed = is_string($overrides['location_address'] ?? null) ? trim($overrides['location_address']) : '';
 
-        if ($address !== '') {
-            $normalized = AddressNormalizer::normalize($address);
-
-            // The reviewer may spell a branch we already know differently
-            // ("Szilleri sgt." vs "Szilléri sugár út"); the normalized key is
-            // what decides whether this is the same row.
-            $existing = $normalized === null ? null : MerchantLocation::query()
-                ->where('merchant_id', $merchant->id)
-                ->where('normalized_address', $normalized)
-                ->first();
-
-            if ($existing !== null) {
-                return $existing->id;
-            }
-
-            return $this->createMerchantLocation->handle($merchant, [
-                'is_online' => false,
-                'address' => $address,
-                'latitude' => null,
-                'longitude' => null,
-            ])->id;
+        if ($typed !== '') {
+            return $this->locationFor($merchant, $typed);
         }
 
         $acceptedId = $context->artifactOrNull('location_candidate')?->json()['accepted_id'] ?? null;
 
-        return is_numeric($acceptedId) ? (int) $acceptedId : null;
+        if (is_numeric($acceptedId)) {
+            return (int) $acceptedId;
+        }
+
+        // The printed address is evidence about the shop printed on the receipt.
+        // Picking a different merchant by hand replaces that identity, and the
+        // review screen offers the address as a one-click branch right there —
+        // so silently filing one shop's address as another shop's branch is a
+        // guess the reviewer already declined to make.
+        if (isset($overrides['merchant_id'])) {
+            return null;
+        }
+
+        // Nothing matched and the reviewer typed nothing: the branch is new,
+        // and the only address we have is the extracted one. Mirrors how a new
+        // merchant is created above — approval is what writes the row, so a
+        // first receipt from a branch still lands on a real location.
+        $extracted = $document instanceof ExtractedReceipt ? trim((string) $document->merchantAddress) : '';
+
+        return $extracted === '' ? null : $this->locationFor($merchant, $extracted);
+    }
+
+    /**
+     * The same branch may be spelled differently ("Szilleri sgt." vs "Szilléri
+     * sugár út"); the normalized key is what decides whether this is the same
+     * row. An address that normalizes to nothing ("---") has no such key, so
+     * every receipt carrying it would add another row that can never match —
+     * no location at all is the honest answer there.
+     */
+    private function locationFor(Merchant $merchant, string $address): ?int
+    {
+        $normalized = AddressNormalizer::normalize($address);
+
+        if ($normalized === null) {
+            return null;
+        }
+
+        $existing = MerchantLocation::query()
+            ->where('merchant_id', $merchant->id)
+            ->where('normalized_address', $normalized)
+            ->first();
+
+        if ($existing !== null) {
+            return $existing->id;
+        }
+
+        return $this->createMerchantLocation->handle($merchant, [
+            'is_online' => false,
+            'address' => $address,
+            'latitude' => null,
+            'longitude' => null,
+        ])->id;
     }
 
     /**

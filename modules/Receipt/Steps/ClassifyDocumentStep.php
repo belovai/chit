@@ -40,6 +40,18 @@ final class ClassifyDocumentStep implements PipelineStep
     public function handle(StepContext $context): StepResult
     {
         $receipt = ArtifactCodec::subject($context);
+        $reviewed = $this->reviewerDecision($context);
+
+        if ($reviewed !== null) {
+            return StepResult::success()
+                ->artifact('doc_type', [
+                    'value' => $reviewed->value,
+                    'confidence' => 1.0,
+                    'reason' => 'Chosen by the reviewer.',
+                ])
+                ->confidence(1.0)
+                ->expand($this->expansionFor($reviewed));
+        }
 
         try {
             $classification = $this->classifier->classify(
@@ -86,6 +98,20 @@ final class ClassifyDocumentStep implements PipelineStep
         }
 
         return $result->expand($this->expansionFor($classification->type));
+    }
+
+    /**
+     * A second attempt only happens after a human answered the very question
+     * this step failed at, so their answer wins over another guess — and over
+     * another paid call that has no new evidence to work from.
+     */
+    private function reviewerDecision(StepContext $context): ?DocumentType
+    {
+        $payload = $context->artifactOrNull('review_decision')?->json() ?? [];
+        $value = $payload['values']['doc_type'] ?? null;
+        $type = is_string($value) ? DocumentType::tryFrom($value) : null;
+
+        return $type === DocumentType::Unknown ? null : $type;
     }
 
     /**

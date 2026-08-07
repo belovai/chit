@@ -6,6 +6,7 @@ import AppSection from '@/components/ui/AppSection.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
+import AppSelect from '@/components/ui/AppSelect.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppBadge, { type BadgeVariant } from '@/components/ui/AppBadge.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
@@ -37,6 +38,24 @@ const FIELD_TO_EXTRACTED_KEYS: Record<string, string[]> = {
   merchant: ['merchant_name', 'merchant_address'],
 }
 
+// What "check everything" means per document type, used when the gate parked
+// the run without naming a single field (see `fields` below).
+const RECEIPT_FIELDS = ['merchant', 'occurred_at', 'total_minor', 'payment_method', 'items']
+
+const ALL_FIELDS: Record<string, string[]> = {
+  receipt: RECEIPT_FIELDS,
+  utility_bill: [
+    'provider_name',
+    'customer_reference',
+    'issued_at',
+    'period_start',
+    'period_end',
+    'meter_reading',
+    'consumption',
+    'total_minor',
+  ],
+}
+
 interface ExtractedItem {
   description: string
   quantity: number
@@ -59,6 +78,7 @@ export default defineComponent({
     AppCard,
     AppButton,
     AppInput,
+    AppSelect,
     AppEmptyState,
     AppBadge,
     ConfirmDialog,
@@ -106,9 +126,21 @@ export default defineComponent({
       return this.receipt ? STATUS_VARIANTS[this.receipt.status] : 'neutral'
     },
 
+    // A gate code names the fields it puts in question, but some — low OCR
+    // confidence above all — put the whole document in question and name none.
+    // Parking a run and then offering nothing to correct is a dead end, so an
+    // empty list reads as "check everything", never as "check nothing".
     fields(): string[] {
       if (!this.isPendingDecision) return []
-      return this.receipt?.review_request?.fields ?? []
+      const flagged = this.receipt?.review_request?.fields ?? []
+      if (flagged.length > 0) return flagged
+      return ALL_FIELDS[this.receipt?.doc_type ?? 'receipt'] ?? RECEIPT_FIELDS
+    },
+
+    // In that case nothing in particular is flagged, so the per-row warning
+    // badge would point at every row and mean nothing.
+    isWholeDocumentReview(): boolean {
+      return this.isPendingDecision && (this.receipt?.review_request?.fields ?? []).length === 0
     },
 
     findings(): ReceiptFinding[] {
@@ -406,7 +438,11 @@ export default defineComponent({
   <div class="flex flex-col gap-4">
     <AppSection
       :title="t('receipts.review.heading')"
-      :description="t('receipts.review.subheading')"
+      :description="
+        isWholeDocumentReview
+          ? t('receipts.review.subheadingWholeDocument')
+          : t('receipts.review.subheading')
+      "
     />
 
     <template v-if="receipt !== null && !isPendingDecision && receipt.extracted === null">
@@ -511,7 +547,12 @@ export default defineComponent({
           </AppCard>
 
           <AppCard v-if="isPendingDecision && fields.length > 0">
-            <ReviewFieldRow v-for="field in fields" :key="field" :field="field" flagged>
+            <ReviewFieldRow
+              v-for="field in fields"
+              :key="field"
+              :field="field"
+              :flagged="!isWholeDocumentReview"
+            >
               <MerchantResolver
                 v-if="field === 'merchant'"
                 :merchant-candidates="receipt.candidates.merchant?.candidates ?? []"
@@ -592,6 +633,17 @@ export default defineComponent({
                   />
                 </div>
               </div>
+
+              <AppSelect
+                v-else-if="field === 'doc_type'"
+                :id="`review-${field}`"
+                :model-value="genericValue(field)"
+                @update:model-value="(value: string) => setGenericValue(field, value)"
+              >
+                <option value="" disabled>{{ t('receipts.upload.hintLabel') }}</option>
+                <option value="receipt">{{ t('receipts.docType.receipt') }}</option>
+                <option value="utility_bill">{{ t('receipts.docType.utility_bill') }}</option>
+              </AppSelect>
 
               <AppInput
                 v-else

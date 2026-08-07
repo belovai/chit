@@ -29,6 +29,7 @@ export default {
     title: 'Review',
     heading: 'Check what we were unsure about',
     subheading: 'Everything not listed here looked consistent.',
+    subheadingWholeDocument: 'Nothing could be checked automatically — please read it over.',
     othersTitle: 'The rest of the document',
     approve: 'Approve',
     reject: 'Reject',

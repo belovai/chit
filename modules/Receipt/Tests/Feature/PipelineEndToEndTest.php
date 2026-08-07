@@ -324,4 +324,114 @@ final class PipelineEndToEndTest extends TestCase
         $this->assertSame(1, MerchantLocation::query()->count());
         $this->assertNotNull($second->refresh()->transaction_id);
     }
+
+    #[Test]
+    public function approving_without_typing_an_address_still_records_the_extracted_branch(): void
+    {
+        $user = User::factory()->create();
+
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'OMV',
+            merchantAddress: '6800 Hódmezővásárhely, Kutasi út 17.',
+            occurredAt: CarbonImmutable::parse('2026-07-14 17:14:00'),
+            currency: 'HUF',
+            totalMinor: 3759200,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [],
+        ));
+
+        $receipt = $this->uploadAndRun($user);
+        $this->assertSame('needs_review', $receipt->refresh()->status->value);
+
+        // The reviewer changes nothing — the extracted address is all we have,
+        // and it must still become the transaction's branch.
+        app(ReviewReceipt::class)->approve($receipt->refresh(), []);
+
+        $location = MerchantLocation::query()->sole();
+
+        $this->assertSame('6800 Hódmezővásárhely, Kutasi út 17.', $location->address);
+        $this->assertSame(Merchant::query()->sole()->id, $location->merchant_id);
+        $this->assertSame($location->id, $receipt->refresh()->transaction?->location_id);
+    }
+
+    #[Test]
+    public function reassigning_the_merchant_by_hand_records_no_branch_from_the_picture(): void
+    {
+        $user = User::factory()->create();
+        $picked = Merchant::factory()->for($user, 'owner')->create(['name' => 'MOL']);
+
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'OMV',
+            merchantAddress: '6800 Hódmezővásárhely, Kutasi út 17.',
+            occurredAt: CarbonImmutable::parse('2026-07-14 17:14:00'),
+            currency: 'HUF',
+            totalMinor: 3759200,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [],
+        ));
+
+        $receipt = $this->uploadAndRun($user);
+
+        // The reviewer says this is MOL, not the OMV printed on it — so OMV's
+        // address must not become a MOL branch behind their back.
+        app(ReviewReceipt::class)->approve($receipt->refresh(), ['merchant_id' => $picked->id]);
+
+        $transaction = $receipt->refresh()->transaction;
+
+        $this->assertSame($picked->id, $transaction?->merchant_id);
+        $this->assertNull($transaction?->location_id);
+        $this->assertSame(0, MerchantLocation::query()->count());
+    }
+
+    #[Test]
+    public function an_address_that_normalizes_to_nothing_records_no_branch(): void
+    {
+        $user = User::factory()->create();
+
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'OMV',
+            merchantAddress: '- - -',
+            occurredAt: CarbonImmutable::parse('2026-07-14 17:14:00'),
+            currency: 'HUF',
+            totalMinor: 3759200,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [],
+        ));
+
+        $receipt = $this->uploadAndRun($user);
+        app(ReviewReceipt::class)->approve($receipt->refresh(), []);
+
+        // A row with no comparison key could never match again, so every later
+        // receipt from this shop would add another one.
+        $this->assertSame(0, MerchantLocation::query()->count());
+        $this->assertNull($receipt->refresh()->transaction?->location_id);
+    }
+
+    #[Test]
+    public function the_document_type_picked_during_review_branches_the_run(): void
+    {
+        $user = User::factory()->create();
+        $merchant = Merchant::factory()->for($user, 'owner')->create(['name' => 'ALDI']);
+        MerchantLocation::factory()->for($merchant)->create(['address' => '6723 Szeged, Szilléri sugár út 26.']);
+        $this->primeReceiptExtraction();
+        FakeDocumentAi::willClassify(DocumentType::Unknown, 0.30);
+
+        $receipt = $this->uploadAndRun($user);
+
+        $this->assertSame(RunStatus::AwaitingManual, $receipt->currentRun?->status);
+        $this->assertSame([], $receipt->currentRun->currentSteps()
+            ->where('stage', 'extract')->pluck('step_key')->all());
+
+        app(ReviewReceipt::class)->approve($receipt, ['doc_type' => 'receipt']);
+
+        $receipt->refresh();
+
+        $this->assertSame(DocumentType::Receipt, $receipt->doc_type);
+        $this->assertSame(RunStatus::Succeeded, $receipt->currentRun?->status);
+        $this->assertNotNull($receipt->transaction_id);
+        $this->assertSame('1327.00', Transaction::query()->findOrFail($receipt->transaction_id)->total_amount);
+    }
 }

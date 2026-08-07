@@ -9,6 +9,7 @@ use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\Enums\StepStatus;
 use Modules\Pipeline\Events\RunStatusChanged;
 use Modules\Pipeline\Exceptions\RunNotAwaitingManualException;
+use Modules\Pipeline\Exceptions\StepNotInRunException;
 use Modules\Pipeline\Jobs\AdvanceRun;
 use Modules\Pipeline\Models\PipelineRun;
 use Modules\Pipeline\Models\PipelineRunStep;
@@ -26,13 +27,16 @@ final class ResumeRun
 
     /**
      * @param  list<PendingArtifact>  $artifacts
+     * @param  list<string>  $reopen  steps to run again, because the decision
+     *                                changed an input they already consumed
      */
-    public function approve(PipelineRun $run, array $artifacts = []): PipelineRun
+    public function approve(PipelineRun $run, array $artifacts = [], array $reopen = []): PipelineRun
     {
         $gate = $this->gateStep($run);
         $from = $run->status;
+        $current = $run->currentSteps()->keyBy('step_key');
 
-        DB::transaction(function () use ($run, $gate, $artifacts): void {
+        DB::transaction(function () use ($run, $gate, $artifacts, $reopen, $current): void {
             foreach ($artifacts as $pending) {
                 $this->artifacts->write($gate, $pending);
             }
@@ -41,6 +45,30 @@ final class ResumeRun
                 'status' => StepStatus::Succeeded,
                 'finished_at' => now(),
             ]);
+
+            foreach ($reopen as $key) {
+                /** @var PipelineRunStep|null $step */
+                $step = $current->get($key);
+
+                if ($step === null) {
+                    throw StepNotInRunException::for($run, $key);
+                }
+
+                $run->steps()->create([
+                    'step_key' => $step->step_key,
+                    'stage' => $step->stage,
+                    'stage_position' => $step->stage_position,
+                    'position' => $step->position,
+                    'attempt' => $step->attempt + 1,
+                    'max_attempts' => $step->max_attempts,
+                    'status' => StepStatus::Pending,
+                    'depends_on' => $step->depends_on,
+                    'allow_failure' => $step->allow_failure,
+                    'is_gate' => $step->is_gate,
+                    'config' => $step->config,
+                    'added_by_step_id' => $step->added_by_step_id,
+                ]);
+            }
 
             $run->update(['status' => RunStatus::Running, 'expires_at' => null]);
         });

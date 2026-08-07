@@ -62,8 +62,76 @@ final class GatePolicyTest extends TestCase
 
         $this->assertTrue($policy->evaluate($this->findings('new_merchant'), 0.99, DocumentType::Receipt)->passes);
         $this->assertFalse(
-            $policy->evaluate($this->findings('new_merchant', 'low_ocr_confidence'), 0.99, DocumentType::Receipt)->passes,
+            $policy->evaluate($this->findings('new_merchant', 'new_location'), 0.99, DocumentType::Receipt)->passes,
         );
+    }
+
+    #[Test]
+    public function a_waived_warning_does_not_count_when_the_extraction_is_confident(): void
+    {
+        config()->set('receipt.gate.max_warnings', 0);
+        config()->set('receipt.gate.min_confidence.receipt', 0.75);
+
+        $decision = app(GatePolicy::class)->evaluate($this->findings('low_ocr_confidence'), 0.94, DocumentType::Receipt);
+
+        $this->assertTrue($decision->passes);
+        $this->assertSame([], $decision->warnings);
+    }
+
+    #[Test]
+    public function a_waived_warning_still_counts_when_the_extraction_is_not_confident(): void
+    {
+        config()->set('receipt.gate.max_warnings', 0);
+        config()->set('receipt.gate.min_confidence.receipt', 0.95);
+
+        $decision = app(GatePolicy::class)->evaluate($this->findings('low_ocr_confidence'), 0.94, DocumentType::Receipt);
+
+        $this->assertFalse($decision->passes);
+        $this->assertSame(['low_ocr_confidence'], $decision->warnings);
+    }
+
+    #[Test]
+    public function a_waived_warning_still_counts_when_the_type_has_no_threshold_to_clear(): void
+    {
+        config()->set('receipt.gate.max_warnings', 0);
+        config()->set('receipt.gate.min_confidence', []);
+
+        $decision = app(GatePolicy::class)->evaluate($this->findings('low_ocr_confidence'), 0.99, DocumentType::Unknown);
+
+        $this->assertFalse($decision->passes);
+        $this->assertSame(['low_ocr_confidence'], $decision->warnings);
+    }
+
+    #[Test]
+    public function a_waivable_code_marked_a_blocker_still_blocks(): void
+    {
+        config()->set('receipt.gate.min_confidence.receipt', 0.75);
+        config()->set('receipt.gate.severity.low_ocr_confidence', 'blocker');
+
+        $decision = app(GatePolicy::class)->evaluate($this->findings('low_ocr_confidence'), 0.99, DocumentType::Receipt);
+
+        $this->assertFalse($decision->passes);
+        $this->assertSame(['low_ocr_confidence'], $decision->blockers);
+    }
+
+    #[Test]
+    public function an_unknown_type_without_a_threshold_is_not_stopped_for_confidence(): void
+    {
+        config()->set('receipt.gate.max_warnings', 0);
+        config()->set('receipt.gate.min_confidence', []);
+
+        $this->assertTrue(app(GatePolicy::class)->evaluate([], 0.10, DocumentType::Unknown)->passes);
+    }
+
+    #[Test]
+    public function a_waived_warning_still_counts_without_a_confidence_to_judge_it_by(): void
+    {
+        config()->set('receipt.gate.max_warnings', 0);
+
+        $decision = app(GatePolicy::class)->evaluate($this->findings('low_ocr_confidence'), null, DocumentType::Receipt);
+
+        $this->assertFalse($decision->passes);
+        $this->assertSame(['low_ocr_confidence'], $decision->warnings);
     }
 
     #[Test]

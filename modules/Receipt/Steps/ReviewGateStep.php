@@ -6,7 +6,7 @@ namespace Modules\Receipt\Steps;
 
 use Modules\Extraction\Enums\DocumentType;
 use Modules\Pipeline\Contracts\PipelineStep;
-use Modules\Pipeline\Models\PipelineRunStep;
+use Modules\Pipeline\Models\PipelineRun;
 use Modules\Pipeline\ValueObjects\StepContext;
 use Modules\Pipeline\ValueObjects\StepResult;
 use Modules\Receipt\Services\ArtifactCodec;
@@ -36,7 +36,7 @@ final class ReviewGateStep implements PipelineStep
         $receipt = ArtifactCodec::subject($context)->refresh();
         $type = $receipt->doc_type ?? DocumentType::Unknown;
 
-        $findings = $this->collectFindings($receipt->current_run_id);
+        $findings = $this->collectFindings($receipt->currentRun);
         $decision = $this->policy->evaluate($findings, $this->extractionConfidence($context), $type);
 
         if ($decision->passes) {
@@ -58,15 +58,17 @@ final class ReviewGateStep implements PipelineStep
     /**
      * @return list<array<string, mixed>>
      */
-    private function collectFindings(?int $runId): array
+    private function collectFindings(?PipelineRun $run): array
     {
-        if ($runId === null) {
+        if ($run === null) {
             return [];
         }
 
         $findings = [];
 
-        foreach (PipelineRunStep::query()->where('run_id', $runId)->get() as $step) {
+        // Current attempts only: a finding from a superseded attempt describes a
+        // state the run has since moved past.
+        foreach ($run->currentSteps() as $step) {
             foreach ($step->findings ?? [] as $finding) {
                 $findings[] = [...$finding, 'step_key' => $step->step_key];
             }

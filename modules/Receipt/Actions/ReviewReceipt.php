@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Receipt\Actions;
 
 use Illuminate\Support\Arr;
+use Modules\Extraction\Enums\DocumentType;
 use Modules\Pipeline\Actions\ResumeRun;
 use Modules\Pipeline\Enums\ArtifactKind;
 use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\Models\PipelineRun;
+use Modules\Pipeline\Models\PipelineRunStep;
 use Modules\Pipeline\ValueObjects\PendingArtifact;
 use Modules\Receipt\Exceptions\ReceiptNotAwaitingReviewException;
 use Modules\Receipt\Models\Receipt;
@@ -33,7 +35,7 @@ final class ReviewReceipt
                 'values' => $values,
                 'decided_at' => now()->toIso8601String(),
             ]),
-        ]);
+        ], $this->reopenFor($run, $values));
 
         return $receipt->refresh();
     }
@@ -51,6 +53,29 @@ final class ReviewReceipt
         ]);
 
         return $receipt->refresh();
+    }
+
+    /**
+     * When the classifier could not decide, the run parked before it branched —
+     * it has no extract step at all. The reviewer's answer is the classification
+     * that was missing, so classify_document runs again to expand the right
+     * branch, and the gate runs again to judge whatever that branch turns up.
+     *
+     * @param  array<string, mixed>  $values
+     * @return list<string>
+     */
+    private function reopenFor(PipelineRun $run, array $values): array
+    {
+        $docType = $values['doc_type'] ?? null;
+
+        if (!is_string($docType) || DocumentType::tryFrom($docType) === null) {
+            return [];
+        }
+
+        $hasBranch = $run->currentSteps()
+            ->contains(fn (PipelineRunStep $step): bool => $step->stage === 'extract');
+
+        return $hasBranch ? [] : ['classify_document', 'review_gate'];
     }
 
     private function parkedRun(Receipt $receipt): PipelineRun

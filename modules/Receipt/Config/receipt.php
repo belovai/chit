@@ -37,6 +37,13 @@ return [
             'no_previous_bill' => 'info',
         ],
 
+        // Codes that describe how the reading went rather than what was read.
+        // Once the extraction clears `min_confidence` for its type, these say
+        // nothing about the document and are dropped before counting — without
+        // this, an unreadable OCR pass parks a run the model read perfectly,
+        // and the review screen then has no field to ask about.
+        'waived_when_confident' => ['low_ocr_confidence'],
+
         // Start strict. Raise this as trust in the extraction grows — at 0 a
         // single warning stops the run, which is what you want on day one.
         'max_warnings' => env('RECEIPT_GATE_MAX_WARNINGS', 0),
