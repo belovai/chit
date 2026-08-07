@@ -6,6 +6,14 @@ export default defineComponent({
 
   props: {
     interactive: { type: Boolean, default: false },
+    /** Cross-axis alignment; `start` reads better when the main slot is multi-line. */
+    align: { type: String as () => 'center' | 'start', default: 'center' },
+  },
+
+  computed: {
+    alignClass(): string {
+      return this.align === 'start' ? 'items-start' : 'items-center'
+    },
   },
 
   emits: ['click'],
@@ -24,8 +32,8 @@ export default defineComponent({
   <component
     :is="interactive ? 'button' : 'div'"
     :type="interactive ? 'button' : undefined"
-    class="flex w-full items-center gap-3 px-5 py-3.5 text-left"
-    :class="interactive ? 'cursor-pointer transition-colors hover:bg-surface' : ''"
+    class="flex w-full gap-3 px-5 py-3.5 text-left"
+    :class="[alignClass, interactive ? 'cursor-pointer transition-colors hover:bg-surface' : '']"
     @click="onClick"
   >
     <span v-if="$slots.leading" class="shrink-0">

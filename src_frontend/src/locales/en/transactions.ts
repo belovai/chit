@@ -16,6 +16,8 @@ export default {
   createMerchantOption: 'Create "{name}" as new merchant',
   locationLabel: 'Location',
   noLocation: 'No location',
+  onlineLocation: 'Online',
+  itemCount: '{count} item | {count} items',
   dateLabel: 'Date & time',
   paymentMethodLabel: 'Payment method',
   discountLabel: 'Discount',

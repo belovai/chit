@@ -2,6 +2,7 @@
 import { defineComponent } from 'vue'
 import { mapState } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { MapPinIcon } from '@heroicons/vue/24/outline'
 import AppSection from '@/components/ui/AppSection.vue'
 import AppCard from '@/components/ui/AppCard.vue'
 import AppListItem from '@/components/ui/AppListItem.vue'
@@ -23,6 +24,7 @@ export default defineComponent({
     AppEmptyState,
     AppBadge,
     AppButton,
+    MapPinIcon,
   },
 
   setup() {
@@ -82,6 +84,17 @@ export default defineComponent({
           : this.t('transactions.card')
     },
 
+    locationLabel(location: Transaction['location']): string | null {
+      if (location === null) return null
+      if (location.is_online) return this.t('transactions.onlineLocation')
+
+      return location.address
+    },
+
+    itemCountLabel(transaction: Transaction): string {
+      return this.t('transactions.itemCount', transaction.items.length)
+    },
+
     goToNew() {
       this.$router.push({ name: 'transaction-new' })
     },
@@ -109,19 +122,31 @@ export default defineComponent({
 
       <ul v-else class="divide-y divide-divider">
         <li v-for="transaction in transactions" :key="transaction.hash_id">
-          <AppListItem interactive @click="goToDetail(transaction)">
-            <span class="flex flex-col gap-0.5">
+          <AppListItem align="start" interactive @click="goToDetail(transaction)">
+            <span class="flex flex-col gap-1">
               <span class="truncate text-sm font-medium text-text">
                 {{ transaction.merchant.name }}
               </span>
-              <span class="flex items-center gap-2 text-[13px] text-neutral-600">
+              <span
+                v-if="locationLabel(transaction.location)"
+                class="flex items-center gap-1 text-[13px] text-neutral-600"
+              >
+                <MapPinIcon class="size-3.5 shrink-0" />
+                <span class="truncate">{{ locationLabel(transaction.location) }}</span>
+              </span>
+              <span
+                class="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-neutral-600"
+              >
                 {{ formatDateTime(transaction.occurred_at) }}
                 <AppBadge>{{ paymentMethodLabel(transaction.payment_method) }}</AppBadge>
+                <AppBadge v-if="transaction.items.length > 0">
+                  {{ itemCountLabel(transaction) }}
+                </AppBadge>
               </span>
             </span>
 
             <template #trailing>
-              <span class="text-sm font-medium text-text">
+              <span class="whitespace-nowrap text-sm font-semibold tabular-nums text-text">
                 {{ transaction.total_amount }} {{ transaction.currency }}
               </span>
             </template>
