@@ -72,6 +72,7 @@ export default defineComponent({
       locationHashId: null as string | null,
       locationInput: acceptedLocation?.name ?? this.rawAddress ?? '',
       locationInputId: `location-address-${randomId()}`,
+      locationInputFocused: false,
       // Every branch of the selected merchant, best match first. Seeded from
       // the pipeline's candidates and replaced wholesale by each suggest call.
       locationOptions: this.locationCandidates.map(
@@ -248,7 +249,10 @@ export default defineComponent({
 
         this.locationOptions = result.candidates
 
-        if (result.accepted_hash_id !== null) {
+        // While the reviewer is still typing in the field, auto-accepting a
+        // match would stomp their keystrokes and silently flip the badge to
+        // "Selected" for text they haven't finished entering.
+        if (result.accepted_hash_id !== null && !this.locationInputFocused) {
           const accepted = result.candidates.find(
             (candidate) => candidate.hash_id === result.accepted_hash_id,
           )
@@ -396,6 +400,8 @@ export default defineComponent({
           :model-value="locationInput"
           :placeholder="t('receipts.review.locationPlaceholder')"
           @update:model-value="onLocationInput"
+          @focus="locationInputFocused = true"
+          @blur="locationInputFocused = false"
         />
         <AppButton variant="ghost" @click="clearLocation">
           {{ t('receipts.review.noLocation') }}
