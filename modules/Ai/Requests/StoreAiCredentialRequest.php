@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Ai\Requests;
 
+use App\Traits\HasCodedValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -14,6 +15,16 @@ use Modules\Ai\Rules\ValidProviderSettings;
 
 final class StoreAiCredentialRequest extends FormRequest
 {
+    use HasCodedValidationMessages;
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->codedValidationMessages();
+    }
+
     /**
      * @return array<string, mixed>
      */

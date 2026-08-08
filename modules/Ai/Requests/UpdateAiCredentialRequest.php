@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Ai\Requests;
 
+use App\Traits\HasCodedValidationMessages;
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Ai\Models\AiCredential;
 use Modules\Ai\Registries\ProviderRegistry;
@@ -15,6 +16,16 @@ use Modules\Ai\Rules\ValidProviderSettings;
  */
 final class UpdateAiCredentialRequest extends FormRequest
 {
+    use HasCodedValidationMessages;
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return $this->codedValidationMessages();
+    }
+
     /**
      * @return array<string, mixed>
      */

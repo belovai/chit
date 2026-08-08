@@ -15,6 +15,7 @@ import merchants from './merchants'
 import merchant from './merchant'
 import products from './products'
 import pipeline from './pipeline'
+import ai from './ai'
 
 export default {
   common,
@@ -34,4 +35,5 @@ export default {
   merchant,
   products,
   pipeline,
+  ai,
 }

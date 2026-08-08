@@ -21,6 +21,7 @@ export default defineComponent({
         { name: 'settings-account', label: this.t('settingsNav.account') },
         { name: 'settings-merchants', label: this.t('settingsNav.merchants') },
         { name: 'settings-products', label: this.t('settingsNav.products') },
+        { name: 'settings-ai', label: this.t('settingsNav.ai') },
         { name: 'settings-tags', label: this.t('settingsNav.tags') },
       ]
     },

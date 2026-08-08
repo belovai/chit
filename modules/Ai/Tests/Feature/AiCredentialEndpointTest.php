@@ -222,6 +222,19 @@ final class AiCredentialEndpointTest extends TestCase
     }
 
     #[Test]
+    public function it_returns_coded_validation_messages(): void
+    {
+        $user = User::factory()->create();
+
+        $response = $this->withToken($this->tokenFor($user))
+            ->postJson('/api/ai/credentials', []);
+
+        $response->assertStatus(422);
+        $this->assertSame(['required'], $response->json('errors.label'));
+        $this->assertSame(['required'], $response->json('errors.api_key'));
+    }
+
+    #[Test]
     public function re_verifying_a_disabled_credential_restores_it(): void
     {
         $user = User::factory()->create();
