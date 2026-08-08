@@ -426,4 +426,51 @@ final class ReceiptBranchStepsTest extends TestCase
         $this->assertSame('Rozsos kenyer', $kenyer->product?->name);
         $this->assertNull(Product::query()->where('name', 'Kenyer')->first());
     }
+
+    #[Test]
+    public function a_reviewed_merchant_name_reuses_an_existing_merchant_instead_of_duplicating_it(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $existing = Merchant::factory()->create(['owner_id' => $receipt->owner_id, 'name' => 'OMV']);
+
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload(['merchant_name' => 'ATLANTA KFT'])]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'ATLANTA KFT', 'accepted_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', [
+            'raw_address' => null, 'accepted_id' => null, 'accepted_hash_id' => null, 'candidates' => [],
+        ]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            // Typed with different casing and padding — still the same shop.
+            'values' => ['merchant_name' => '  omv  ', 'location_hash_id' => null],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $this->assertSame(1, Merchant::query()->count());
+        $this->assertSame($existing->id, Transaction::query()->firstOrFail()->merchant_id);
+    }
+
+    #[Test]
+    public function a_reviewed_merchant_name_of_another_owner_still_creates_a_new_merchant(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        Merchant::factory()->create(['name' => 'OMV']);
+
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload(['merchant_name' => 'ATLANTA KFT'])]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'ATLANTA KFT', 'accepted_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', [
+            'raw_address' => null, 'accepted_id' => null, 'accepted_hash_id' => null, 'candidates' => [],
+        ]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            'values' => ['merchant_name' => 'OMV', 'location_hash_id' => null],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $this->assertSame(2, Merchant::query()->count());
+        $this->assertSame(1, Merchant::query()->where('owner_id', $receipt->owner_id)->count());
+    }
 }

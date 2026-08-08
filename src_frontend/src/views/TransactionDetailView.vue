@@ -122,6 +122,21 @@ export default defineComponent({
 
         <AppCard :padded="false">
           <div class="divide-y divide-divider">
+            <!-- The heading carries the merchant name as the page's identity;
+                 as a row it is data, next to the branch it belongs to. -->
+            <AppCardRow :label="t('transactions.merchantLabel')">
+              <span class="text-sm text-text">{{ transaction.merchant.name }}</span>
+            </AppCardRow>
+            <!-- Rendered even when there is none: a missing branch is a fact
+            about the transaction, and dropping the row hides it. -->
+            <AppCardRow :label="t('transactions.locationLabel')">
+              <span
+                class="text-sm"
+                :class="transaction.location ? 'text-text' : 'text-neutral-500'"
+              >
+                {{ transaction.location?.address ?? t('transactions.noLocation') }}
+              </span>
+            </AppCardRow>
             <AppCardRow :label="t('transactions.totalLabel')">
               <span class="text-base font-semibold text-text">
                 {{ transaction.total_amount }} {{ transaction.currency }}
@@ -132,12 +147,6 @@ export default defineComponent({
             </AppCardRow>
             <AppCardRow :label="t('transactions.paymentMethodLabel')">
               <AppBadge>{{ paymentMethodLabel(transaction.payment_method) }}</AppBadge>
-            </AppCardRow>
-            <AppCardRow
-              v-if="transaction.location?.address"
-              :label="t('transactions.locationLabel')"
-            >
-              <span class="text-sm text-text">{{ transaction.location.address }}</span>
             </AppCardRow>
             <AppCardRow v-if="transaction.discount_amount" :label="t('transactions.discountLabel')">
               <span class="text-sm text-text">{{ transaction.discount_amount }}</span>

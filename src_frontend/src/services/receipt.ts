@@ -1,4 +1,5 @@
 import { apiRequest, apiRequestPaginated } from '@/services/http'
+import { ApiError } from '@/types/auth'
 import type { DocType, Receipt, ReceiptDetail, ReviewPayload } from '@/types/receipt'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://chit.127.0.0.1.nip.io'
@@ -40,10 +41,11 @@ export const receiptService = {
     const payload = await response.json().catch(() => null)
 
     if (!response.ok) {
-      throw new Error(
+      throw new ApiError(
         payload && typeof payload === 'object' && 'message' in payload
           ? String((payload as { message: unknown }).message)
           : response.statusText,
+        response.status,
       )
     }
 

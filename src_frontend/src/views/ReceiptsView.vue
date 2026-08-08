@@ -14,7 +14,12 @@ import { useAuthStore } from '@/stores/auth'
 import { receiptService } from '@/services/receipt'
 import { useRunPolling } from '@/composables/useRunPolling'
 import { formatRelativeFromIso } from '@/utils/datetime'
+import { ApiError } from '@/types/auth'
 import { isReceiptSettled, type DocType, type Receipt, type ReceiptStatus } from '@/types/receipt'
+
+// Backend's literal message for `NoActiveAiCredentialException::forUser` (bootstrap/app.php)
+// — not a translation key, so matched verbatim here to offer the settings link.
+const NO_AI_CREDENTIAL_MESSAGE = 'No usable AI credential is configured.'
 
 const STATUS_VARIANTS: Record<ReceiptStatus, BadgeVariant> = {
   pending: 'neutral',
@@ -54,6 +59,7 @@ export default defineComponent({
       isLoading: false,
       isUploading: false,
       uploadError: null as string | null,
+      uploadMissingAiCredential: false,
       docTypeHint: '' as DocType | '',
       capturePhoto: false,
       polling: null as ReturnType<typeof useRunPolling> | null,
@@ -135,6 +141,7 @@ export default defineComponent({
       if (!file) return
 
       this.uploadError = null
+      this.uploadMissingAiCredential = false
       this.isUploading = true
       try {
         await receiptService.upload(
@@ -145,8 +152,12 @@ export default defineComponent({
         await this.$router.push({ name: 'receipts' })
         await this.loadPage(1)
         this.polling?.start()
-      } catch {
-        this.uploadError = this.t('receipts.upload.failed')
+      } catch (error) {
+        if (error instanceof ApiError && error.message === NO_AI_CREDENTIAL_MESSAGE) {
+          this.uploadMissingAiCredential = true
+        } else {
+          this.uploadError = this.t('receipts.upload.failed')
+        }
       } finally {
         this.isUploading = false
       }
@@ -195,6 +206,15 @@ export default defineComponent({
       />
 
       <p v-if="uploadError" class="text-sm text-danger-700">{{ uploadError }}</p>
+      <div
+        v-if="uploadMissingAiCredential"
+        class="flex flex-wrap items-center gap-2 rounded-md border border-danger/40 bg-danger/5 px-3 py-2 text-sm text-danger-700"
+      >
+        <span>{{ t('receipts.upload.noAiCredential') }}</span>
+        <RouterLink :to="{ name: 'settings-ai' }" class="font-medium underline">
+          {{ t('receipts.upload.noAiCredentialLink') }}
+        </RouterLink>
+      </div>
     </AppSection>
 
     <AppCard :padded="false">

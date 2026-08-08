@@ -52,7 +52,7 @@ export default defineComponent({
     <div class="flex items-center gap-2">
       <AppInput :id="newNameId" v-model="newName" class="flex-1" />
       <AppButton :disabled="newName.trim() === ''" @click="$emit('create', newName.trim())">
-        {{ createLabel ?? t('receipts.review.newMerchant') }}
+        {{ createLabel ?? t('receipts.review.newProduct') }}
       </AppButton>
     </div>
   </div>

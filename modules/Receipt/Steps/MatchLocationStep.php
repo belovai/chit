@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Receipt\Steps;
 
-use Modules\Merchant\Models\MerchantLocation;
 use Modules\Merchant\Services\AddressNormalizer;
+use Modules\Merchant\Services\LocationMatcher;
 use Modules\Pipeline\Contracts\PipelineStep;
 use Modules\Pipeline\ValueObjects\Finding;
 use Modules\Pipeline\ValueObjects\StepContext;
@@ -30,13 +30,14 @@ final class MatchLocationStep implements PipelineStep
         return (string) config('pipeline.queues.default');
     }
 
+    public function __construct(private readonly LocationMatcher $matcher) {}
+
     public function handle(StepContext $context): StepResult
     {
         $merchantId = $context->artifact('merchant_candidates')->json()['accepted_id'] ?? null;
         $rawAddress = ArtifactCodec::readReceipt($context)->merchantAddress;
-        $normalized = AddressNormalizer::normalize($rawAddress);
 
-        if (!is_numeric($merchantId) || $normalized === null) {
+        if (!is_numeric($merchantId) || AddressNormalizer::normalize($rawAddress) === null) {
             return StepResult::success()->artifact('location_candidate', [
                 'raw_address' => $rawAddress,
                 'accepted_id' => null,
@@ -45,18 +46,24 @@ final class MatchLocationStep implements PipelineStep
             ]);
         }
 
-        $encoded = $this->candidates((int) $merchantId, $normalized);
+        $match = $this->matcher->match(
+            (int) $merchantId,
+            $rawAddress,
+            (float) config('receipt.matching.location_accept_score'),
+            (float) config('receipt.matching.location_ambiguity_margin'),
+        );
 
-        $accept = (float) config('receipt.matching.location_accept_score');
-        $margin = (float) config('receipt.matching.location_ambiguity_margin');
+        // The artifact's candidate entries have always used `name` for the
+        // address. Receipts already in the database carry that shape, so the
+        // matcher's `address` is mapped rather than renamed here.
+        $encoded = array_map(static fn (array $row): array => [
+            'id' => $row['id'],
+            'hash_id' => $row['hash_id'],
+            'name' => $row['address'],
+            'score' => $row['score'],
+        ], $match->candidates());
 
-        $best = $encoded[0] ?? null;
-        $runnerUp = $encoded[1] ?? null;
-
-        $isAmbiguous = $best !== null && $runnerUp !== null
-            && ($best['score'] - $runnerUp['score']) < $margin;
-
-        $accepted = $best !== null && $best['score'] >= $accept && !$isAmbiguous ? $best : null;
+        $accepted = $match->accepted();
 
         $result = StepResult::success()->artifact('location_candidate', [
             'raw_address' => $rawAddress,
@@ -65,7 +72,7 @@ final class MatchLocationStep implements PipelineStep
             'candidates' => $encoded,
         ]);
 
-        if ($isAmbiguous) {
+        if ($match->isAmbiguous()) {
             return $result->finding(Finding::warning('location_ambiguous', context: [
                 'raw_address' => $rawAddress,
                 'candidates' => array_slice($encoded, 0, 3),
@@ -81,27 +88,5 @@ final class MatchLocationStep implements PipelineStep
         }
 
         return $result;
-    }
-
-    /**
-     * @return list<array{id: int, hash_id: string, name: string, score: float}>
-     */
-    private function candidates(int $merchantId, string $normalized): array
-    {
-        return array_values(MerchantLocation::query()
-            ->where('merchant_id', $merchantId)
-            ->whereNotNull('normalized_address')
-            ->selectRaw('merchant_locations.*, similarity(normalized_address, ?) as score', [$normalized])
-            ->whereRaw('similarity(normalized_address, ?) > ?', [$normalized, (float) config('merchant.matching.threshold')])
-            ->orderByDesc('score')
-            ->limit((int) config('merchant.matching.limit'))
-            ->get()
-            ->map(static fn (MerchantLocation $location): array => [
-                'id' => $location->id,
-                'hash_id' => $location->hash_id,
-                'name' => (string) $location->address,
-                'score' => round((float) $location->getAttribute('score'), 4),
-            ])
-            ->all());
     }
 }

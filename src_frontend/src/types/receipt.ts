@@ -1,3 +1,5 @@
+import type { Transaction } from '@/types/transaction'
+
 export type ReceiptStatus =
   | 'pending'
   | 'processing'
@@ -77,6 +79,8 @@ export interface ReceiptDetail extends Receipt {
     previous_bill: Record<string, unknown> | null
   }
   review_request: ReviewRequest | null
+  // What was actually written. Null until a decision produced a transaction.
+  transaction: Transaction | null
 }
 
 export interface ReviewPayload {
