@@ -38,6 +38,7 @@ final class RetryRun
                 trigger: TriggerSource::Retry,
                 config: $this->configFrom($run),
                 retriedFromRunId: $run->id,
+                aiCredentialId: $run->ai_credential_id,
             );
         }
 

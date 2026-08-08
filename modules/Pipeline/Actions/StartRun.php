@@ -29,6 +29,7 @@ final class StartRun
         TriggerSource $trigger = TriggerSource::ManualUpload,
         array $config = [],
         ?int $retriedFromRunId = null,
+        ?int $aiCredentialId = null,
     ): PipelineRun {
         $definition = $this->pipelines->get($definitionKey);
         $stages = $definition->stages();
@@ -37,10 +38,11 @@ final class StartRun
         $this->assertValid($steps, $stages);
 
         $run = DB::transaction(function () use (
-            $definition, $stages, $steps, $ownerId, $subject, $trigger, $config, $retriedFromRunId,
+            $definition, $stages, $steps, $ownerId, $subject, $trigger, $config, $retriedFromRunId, $aiCredentialId,
         ): PipelineRun {
             $run = PipelineRun::query()->create([
                 'owner_id' => $ownerId,
+                'ai_credential_id' => $aiCredentialId,
                 'subject_type' => $subject?->getMorphClass(),
                 'subject_id' => $subject?->getKey(),
                 'definition_key' => $definition->key(),

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\User\Actions;
 
+use Modules\User\Events\AccountDeleted;
 use Modules\User\Jobs\PurgeUserData;
 use Modules\User\Models\User;
 
@@ -19,6 +20,8 @@ final class DeleteAccount
     {
         $user->tokens()->delete();
         $user->delete();
+
+        AccountDeleted::dispatch($user->id);
 
         PurgeUserData::dispatch($user->id);
     }

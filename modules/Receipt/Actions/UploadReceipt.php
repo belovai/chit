@@ -7,6 +7,8 @@ namespace Modules\Receipt\Actions;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Ai\Exceptions\NoActiveAiCredentialException;
+use Modules\Ai\Services\AiConnectionResolver;
 use Modules\Extraction\Enums\DocumentType;
 use Modules\Pipeline\Actions\StartRun;
 use Modules\Pipeline\Enums\TriggerSource;
@@ -15,10 +17,22 @@ use Modules\Receipt\Models\Receipt;
 
 final class UploadReceipt
 {
-    public function __construct(private readonly StartRun $startRun) {}
+    public function __construct(
+        private readonly StartRun $startRun,
+        private readonly AiConnectionResolver $connections,
+    ) {}
 
     public function handle(int $ownerId, UploadedFile $file, ?DocumentType $hint = null): Receipt
     {
+        // Resolved first so a user without a key gets a synchronous, actionable
+        // error instead of a failed job thirty seconds later — and so no orphan
+        // file or receipt row is left behind.
+        $credential = $this->connections->activeCredentialFor($ownerId);
+
+        if ($credential === null || !$credential->status->isUsable()) {
+            throw NoActiveAiCredentialException::forUser($ownerId);
+        }
+
         $disk = (string) config('receipt.upload.disk');
         $path = 'receipts/'.Str::uuid()->toString().'.'.($file->guessExtension() ?? 'bin');
         $contents = (string) file_get_contents($file->getRealPath());
@@ -44,6 +58,7 @@ final class UploadReceipt
             ownerId: $ownerId,
             subject: $receipt,
             trigger: TriggerSource::ManualUpload,
+            aiCredentialId: $credential->id,
         );
 
         $receipt->update(['current_run_id' => $run->id]);

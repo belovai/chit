@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Extraction\Ai\ValueObjects;
 
+use Modules\Ai\ValueObjects\AiUsage;
+
 final readonly class ExtractionResult
 {
     /**

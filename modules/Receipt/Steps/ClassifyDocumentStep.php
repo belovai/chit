@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Receipt\Steps;
 
+use Modules\Ai\Exceptions\AiException;
+use Modules\Ai\Exceptions\NoActiveAiCredentialException;
+use Modules\Ai\Services\AiConnectionResolver;
+use Modules\Ai\ValueObjects\AiConnection;
 use Modules\Extraction\Ai\Contracts\DocumentClassifier;
 use Modules\Extraction\Enums\DocumentType;
-use Modules\Extraction\Exceptions\AiException;
 use Modules\Pipeline\Contracts\PipelineStep;
 use Modules\Pipeline\Exceptions\StepException;
 use Modules\Pipeline\ValueObjects\Finding;
@@ -25,7 +28,10 @@ final class ClassifyDocumentStep implements PipelineStep
     /** Below this we do not trust the branch decision enough to act on it. */
     private const MIN_CONFIDENCE = 0.60;
 
-    public function __construct(private readonly DocumentClassifier $classifier) {}
+    public function __construct(
+        private readonly DocumentClassifier $classifier,
+        private readonly AiConnectionResolver $connections,
+    ) {}
 
     public static function key(): string
     {
@@ -54,10 +60,16 @@ final class ClassifyDocumentStep implements PipelineStep
         }
 
         try {
+            $connection = $this->resolveConnection($context);
+
             $classification = $this->classifier->classify(
+                on: $connection,
                 ocrText: $context->artifact('ocr_text')->text(),
                 hint: $receipt->doc_type_hint,
             );
+        } catch (NoActiveAiCredentialException $exception) {
+            // A missing key is the user's to fix; retrying cannot help.
+            return StepResult::failure(StepException::permanent($exception->getMessage(), $exception));
         } catch (AiException $exception) {
             return StepResult::failure(
                 $exception->isRetryable()
@@ -150,5 +162,16 @@ final class ClassifyDocumentStep implements PipelineStep
             StepDefinition::make(DedupeContentStep::class)->inStage('validate')
                 ->dependsOn('match_merchant'),
         ];
+    }
+
+    private function resolveConnection(StepContext $context): AiConnection
+    {
+        $credentialId = $context->aiCredentialId();
+
+        if ($credentialId === null) {
+            throw NoActiveAiCredentialException::forUser($context->ownerId());
+        }
+
+        return $this->connections->forCredentialId($credentialId);
     }
 }

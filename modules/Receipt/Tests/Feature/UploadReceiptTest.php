@@ -7,6 +7,7 @@ namespace Modules\Receipt\Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Modules\Ai\Models\AiCredential;
 use Modules\Extraction\Ai\Testing\FakeDocumentAi;
 use Modules\Extraction\Enums\DocumentType;
 use Modules\Extraction\Ocr\Testing\FakeOcrEngine;
@@ -29,7 +30,7 @@ final class UploadReceiptTest extends TestCase
         FakeOcrEngine::returns('ALDI ...', 0.9);
         FakeDocumentAi::willClassify(DocumentType::Receipt, 0.95);
         config()->set('extraction.ocr.engine', 'fake');
-        config()->set('extraction.ai.provider', 'fake');
+        config()->set('extraction.ai.fake_documents', true);
         config()->set('receipt.upload.disk', 'local');
     }
 
@@ -44,6 +45,7 @@ final class UploadReceiptTest extends TestCase
     public function it_stores_the_file_creates_the_receipt_and_starts_a_run(): void
     {
         $user = User::factory()->create();
+        AiCredential::factory()->for($user, 'owner')->active()->create();
         $token = $user->createToken('api')->plainTextToken;
 
         $response = $this->withHeader('Authorization', "Bearer {$token}")
@@ -65,6 +67,7 @@ final class UploadReceiptTest extends TestCase
     public function the_stored_hash_is_the_sha256_of_the_uploaded_bytes(): void
     {
         $user = User::factory()->create();
+        AiCredential::factory()->for($user, 'owner')->active()->create();
         $token = $user->createToken('api')->plainTextToken;
         $bytes = (string) file_get_contents(base_path('modules/Extraction/Tests/Support/fixtures/aldi-receipt.png'));
 
@@ -78,6 +81,7 @@ final class UploadReceiptTest extends TestCase
     public function it_records_a_document_type_hint(): void
     {
         $user = User::factory()->create();
+        AiCredential::factory()->for($user, 'owner')->active()->create();
         $token = $user->createToken('api')->plainTextToken;
 
         $this->withHeader('Authorization', "Bearer {$token}")
@@ -128,5 +132,16 @@ final class UploadReceiptTest extends TestCase
     public function upload_requires_authentication(): void
     {
         $this->post('/api/receipts', ['file' => $this->image()])->assertUnauthorized();
+    }
+
+    #[Test]
+    public function upload_without_an_ai_credential_returns_a_422_not_a_500(): void
+    {
+        $user = User::factory()->create();
+        $token = $user->createToken('api')->plainTextToken;
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->post('/api/receipts', ['file' => $this->image()])
+            ->assertStatus(422);
     }
 }

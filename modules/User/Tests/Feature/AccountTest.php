@@ -241,9 +241,4 @@ final class AccountTest extends TestCase
         $response->assertUnprocessable();
         $response->assertJsonPath('errors.current_password.0', 'required');
     }
-
-    private function tokenFor(User $user): string
-    {
-        return $user->createToken('api')->plainTextToken;
-    }
 }

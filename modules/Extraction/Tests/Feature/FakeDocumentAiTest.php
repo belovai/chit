@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Extraction\Tests\Feature;
 
+use Modules\Ai\Exceptions\AiException;
+use Modules\Ai\ValueObjects\AiConnection;
 use Modules\Extraction\Ai\Contracts\DocumentClassifier;
 use Modules\Extraction\Ai\Contracts\DocumentExtractor;
 use Modules\Extraction\Ai\Testing\FakeDocumentAi;
 use Modules\Extraction\Ai\ValueObjects\ExtractedBill;
 use Modules\Extraction\Enums\DocumentType;
-use Modules\Extraction\Exceptions\AiException;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;
 
@@ -19,7 +20,12 @@ final class FakeDocumentAiTest extends TestCase
     {
         parent::setUp();
         FakeDocumentAi::reset();
-        config()->set('extraction.ai.provider', 'fake');
+        config()->set('extraction.ai.fake_documents', true);
+    }
+
+    private function connection(): AiConnection
+    {
+        return new AiConnection('fake', 'fake-model', 'sk-fake-key');
     }
 
     #[Test]
@@ -34,7 +40,7 @@ final class FakeDocumentAiTest extends TestCase
     {
         FakeDocumentAi::willClassify(DocumentType::UtilityBill, 0.71);
 
-        $result = app(DocumentClassifier::class)->classify('ELMU ...');
+        $result = app(DocumentClassifier::class)->classify($this->connection(), 'ELMU ...');
 
         $this->assertSame(DocumentType::UtilityBill, $result->type);
         $this->assertSame(0.71, $result->confidence);
@@ -48,7 +54,7 @@ final class FakeDocumentAiTest extends TestCase
         $bill = new ExtractedBill('ELMU', '1234567890', 'HUF', 1845000, null, null, null, 45231.0, null, 312.0, 'kWh');
         FakeDocumentAi::willExtract($bill, 0.88);
 
-        $result = app(DocumentExtractor::class)->extract('fake-bytes', 'image/png', DocumentType::UtilityBill);
+        $result = app(DocumentExtractor::class)->extract($this->connection(), 'fake-bytes', 'image/png', DocumentType::UtilityBill);
 
         $this->assertSame($bill, $result->document);
         $this->assertSame(0.88, $result->confidence);
@@ -63,13 +69,16 @@ final class FakeDocumentAiTest extends TestCase
         FakeDocumentAi::willFail(AiException::retryable('simulated 429'));
 
         try {
-            app(DocumentClassifier::class)->classify('anything');
+            app(DocumentClassifier::class)->classify($this->connection(), 'anything');
             $this->fail('expected an AiException');
         } catch (AiException $exception) {
             $this->assertTrue($exception->isRetryable());
         }
 
         // The second call succeeds — priming is one-shot.
-        $this->assertSame(DocumentType::Receipt, app(DocumentClassifier::class)->classify('anything')->type);
+        $this->assertSame(
+            DocumentType::Receipt,
+            app(DocumentClassifier::class)->classify($this->connection(), 'anything')->type,
+        );
     }
 }

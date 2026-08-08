@@ -4,16 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Extraction\Ai\Testing;
 
+use Modules\Ai\Exceptions\AiException;
+use Modules\Ai\ValueObjects\AiConnection;
+use Modules\Ai\ValueObjects\AiUsage;
 use Modules\Extraction\Ai\Contracts\DocumentClassifier;
 use Modules\Extraction\Ai\Contracts\DocumentExtractor;
-use Modules\Extraction\Ai\ValueObjects\AiUsage;
 use Modules\Extraction\Ai\ValueObjects\ClassificationResult;
 use Modules\Extraction\Ai\ValueObjects\ExtractedBill;
 use Modules\Extraction\Ai\ValueObjects\ExtractedLineItem;
 use Modules\Extraction\Ai\ValueObjects\ExtractedReceipt;
 use Modules\Extraction\Ai\ValueObjects\ExtractionResult;
 use Modules\Extraction\Enums\DocumentType;
-use Modules\Extraction\Exceptions\AiException;
 
 /**
  * Ships in the module rather than in Tests/ so the Receipt module (and anything
@@ -40,6 +41,13 @@ final class FakeDocumentAi implements DocumentClassifier, DocumentExtractor
     private static ?string $lastImageBytes = null;
 
     private static ?string $lastImageMimeType = null;
+
+    private static ?AiConnection $lastConnection = null;
+
+    public static function lastConnection(): ?AiConnection
+    {
+        return self::$lastConnection;
+    }
 
     public static function willClassify(DocumentType $type, float $confidence = 0.95): void
     {
@@ -71,6 +79,7 @@ final class FakeDocumentAi implements DocumentClassifier, DocumentExtractor
         self::$lastOcrText = null;
         self::$lastImageBytes = null;
         self::$lastImageMimeType = null;
+        self::$lastConnection = null;
     }
 
     public static function classifyCount(): int
@@ -98,8 +107,9 @@ final class FakeDocumentAi implements DocumentClassifier, DocumentExtractor
         return self::$lastImageMimeType;
     }
 
-    public function classify(string $ocrText, ?DocumentType $hint = null): ClassificationResult
+    public function classify(AiConnection $on, string $ocrText, ?DocumentType $hint = null): ClassificationResult
     {
+        self::$lastConnection = $on;
         self::$classifyCount++;
         self::$lastOcrText = $ocrText;
         $this->throwIfPrimed();
@@ -112,8 +122,9 @@ final class FakeDocumentAi implements DocumentClassifier, DocumentExtractor
         );
     }
 
-    public function extract(string $imageBytes, string $mimeType, DocumentType $type): ExtractionResult
+    public function extract(AiConnection $on, string $imageBytes, string $mimeType, DocumentType $type): ExtractionResult
     {
+        self::$lastConnection = $on;
         self::$extractCount++;
         self::$lastImageBytes = $imageBytes;
         self::$lastImageMimeType = $mimeType;

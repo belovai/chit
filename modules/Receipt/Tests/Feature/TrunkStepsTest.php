@@ -34,7 +34,7 @@ final class TrunkStepsTest extends TestCase
         FakeOcrEngine::reset();
         FakeDocumentAi::reset();
         config()->set('extraction.ocr.engine', 'fake');
-        config()->set('extraction.ai.provider', 'fake');
+        config()->set('extraction.ai.fake_documents', true);
     }
 
     #[Test]
