@@ -17,7 +17,9 @@ import MerchantResolver from '@/components/receipt/MerchantResolver.vue'
 import { useAuthStore } from '@/stores/auth'
 import { receiptService } from '@/services/receipt'
 import { pipelineService } from '@/services/pipeline'
+import { formatDateTime } from '@/utils/datetime'
 import type { Candidate, ReceiptDetail, ReceiptFinding, ReceiptStatus } from '@/types/receipt'
+import type { PaymentMethod, TransactionItem } from '@/types/transaction'
 
 const STATUS_VARIANTS: Record<ReceiptStatus, BadgeVariant> = {
   pending: 'neutral',
@@ -90,7 +92,7 @@ export default defineComponent({
 
   setup() {
     const { t, te } = useI18n()
-    return { t, te }
+    return { t, te, formatDateTime }
   },
 
   data() {
@@ -331,6 +333,26 @@ export default defineComponent({
       return typeof value === 'number' ? this.formatMoney(value) : '—'
     },
 
+    // The recorded transaction is already in major units with its own currency
+    // — it is a persisted row, not an extraction payload, so `formatMoney` and
+    // its minor-unit arithmetic have nothing to do here.
+    recordedMoney(amount: string | null): string {
+      if (amount === null) return '—'
+      return `${amount} ${this.receipt?.transaction?.currency ?? ''}`.trim()
+    },
+
+    recordedPaymentMethod(method: PaymentMethod): string {
+      return method === 'cash'
+        ? this.t('transactions.cash')
+        : method === 'bank_transfer'
+          ? this.t('transactions.bankTransfer')
+          : this.t('transactions.card')
+    },
+
+    recordedLineTotal(item: TransactionItem): string {
+      return this.recordedMoney((Number(item.quantity) * Number(item.unit_price)).toFixed(2))
+    },
+
     consumptionText(): string {
       const value = this.receipt?.extracted?.consumption
       if (typeof value !== 'number') return '—'
@@ -353,7 +375,13 @@ export default defineComponent({
     // the whole thing each time, so a key it dropped (e.g. merchant_id after
     // switching to "create new") disappears here too.
     applyMerchantValues(next: Record<string, unknown>) {
-      for (const key of ['merchant_id', 'merchant_name', 'location_hash_id', 'location_address']) {
+      for (const key of [
+        'merchant_id',
+        'merchant_hash_id',
+        'merchant_name',
+        'location_hash_id',
+        'location_address',
+      ]) {
         delete this.values[key]
       }
       Object.assign(this.values, next)
@@ -492,6 +520,48 @@ export default defineComponent({
             <FindingList :findings="findings" />
           </AppCard>
 
+          <!-- What the picture said and what the books say are two different
+               things the moment a field was corrected; the card above is the
+               first, this one is the second. -->
+          <AppCard v-if="receipt.transaction" :title="t('receipts.review.recordedTitle')">
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+              <dt class="text-neutral-500">{{ t('transactions.merchantLabel') }}</dt>
+              <dd>{{ receipt.transaction.merchant.name }}</dd>
+              <dt class="text-neutral-500">{{ t('transactions.locationLabel') }}</dt>
+              <dd :class="{ 'text-neutral-500': !receipt.transaction.location }">
+                {{
+                  receipt.transaction.location?.address ?? t('receipts.review.noLocationRecorded')
+                }}
+              </dd>
+              <dt class="text-neutral-500">{{ t('transactions.dateLabel') }}</dt>
+              <dd>{{ formatDateTime(receipt.transaction.occurred_at) }}</dd>
+              <dt class="text-neutral-500">{{ t('transactions.paymentMethodLabel') }}</dt>
+              <dd>{{ recordedPaymentMethod(receipt.transaction.payment_method) }}</dd>
+              <dt class="text-neutral-500">{{ t('transactions.totalLabel') }}</dt>
+              <dd>{{ recordedMoney(receipt.transaction.total_amount) }}</dd>
+              <template v-if="receipt.transaction.discount_amount">
+                <dt class="text-neutral-500">{{ t('transactions.discountLabel') }}</dt>
+                <dd>{{ recordedMoney(receipt.transaction.discount_amount) }}</dd>
+              </template>
+            </dl>
+
+            <div v-if="receipt.transaction.items.length > 0" class="mt-3 flex flex-col gap-1.5">
+              <div
+                v-for="(item, index) in receipt.transaction.items"
+                :key="index"
+                class="flex items-baseline justify-between gap-2 rounded-sm border border-divider p-2"
+              >
+                <p class="text-xs text-neutral-700">
+                  {{ item.product?.name ?? item.description }} · {{ item.quantity
+                  }}{{ item.unit ? ` ${item.unit}` : '' }}
+                </p>
+                <p class="whitespace-nowrap text-xs font-medium text-neutral-700">
+                  {{ recordedLineTotal(item) }}
+                </p>
+              </div>
+            </div>
+          </AppCard>
+
           <AppCard v-if="!isPendingDecision" :title="t('receipts.review.summaryTitle')">
             <dl class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <template v-if="receipt.doc_type === 'utility_bill'">
@@ -623,7 +693,11 @@ export default defineComponent({
                       {{ formatMoney(itemLineTotalMinor(item)) }}
                     </p>
                   </div>
+                  <p v-if="itemLineTotalMinor(item) < 0" class="text-xs text-neutral-500">
+                    {{ t('receipts.review.negativeItemIsDiscount') }}
+                  </p>
                   <CandidatePicker
+                    v-else
                     :candidates="productCandidatesFor(index)"
                     :accepted-id="productAcceptedIdFor(index)"
                     :raw-name="item.description"

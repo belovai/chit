@@ -120,6 +120,13 @@ final class CreateTransactionStep implements PipelineStep
         ExtractedReceipt|ExtractedBill $document,
         array $overrides,
     ): ?Merchant {
+        if (isset($overrides['merchant_hash_id']) && is_string($overrides['merchant_hash_id']) && $overrides['merchant_hash_id'] !== '') {
+            return Merchant::query()
+                ->where('owner_id', $context->ownerId())
+                ->where('hash_id', $overrides['merchant_hash_id'])
+                ->first();
+        }
+
         if (isset($overrides['merchant_id']) && is_numeric($overrides['merchant_id'])) {
             return Merchant::query()
                 ->where('owner_id', $context->ownerId())
@@ -144,7 +151,22 @@ final class CreateTransactionStep implements PipelineStep
             return null;
         }
 
-        return $this->createMerchant->handle($context->ownerId(), ['name' => trim($name)]);
+        $name = trim($name);
+
+        // The reviewer can type a name that already exists — the review screen
+        // resolves an exact match to a selection, but nothing stops a client
+        // from posting the name instead. Exact and case-insensitive on purpose:
+        // a fuzzy match here would silently merge two genuinely different shops.
+        $existing = Merchant::query()
+            ->where('owner_id', $context->ownerId())
+            ->whereRaw('lower(name) = ?', [mb_strtolower($name)])
+            ->first();
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        return $this->createMerchant->handle($context->ownerId(), ['name' => $name]);
     }
 
     /**
@@ -192,7 +214,7 @@ final class CreateTransactionStep implements PipelineStep
         // review screen offers the address as a one-click branch right there —
         // so silently filing one shop's address as another shop's branch is a
         // guess the reviewer already declined to make.
-        if (isset($overrides['merchant_id'])) {
+        if (isset($overrides['merchant_id']) || isset($overrides['merchant_hash_id'])) {
             return null;
         }
 
@@ -275,6 +297,13 @@ final class CreateTransactionStep implements PipelineStep
         $items = [];
 
         foreach ($document->items as $index => $item) {
+            // A negative line is a discount the model misfiled as an item —
+            // never matched or created as a product, same rule the review
+            // screen enforces by hiding the picker for these rows.
+            if ($item->effectiveTotalMinor() < 0) {
+                continue;
+            }
+
             $override = $itemOverrides[$index] ?? null;
 
             if ($override !== null) {

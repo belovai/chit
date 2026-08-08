@@ -7,6 +7,7 @@ namespace Modules\Receipt\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Receipt\Models\Receipt;
+use Modules\Transaction\Resources\TransactionResource;
 
 /**
  * @mixin Receipt
@@ -31,6 +32,13 @@ final class ReceiptDetailResource extends JsonResource
                 'previous_bill' => $this->artifact('previous_bill'),
             ],
             'review_request' => $this->artifact('review_request'),
+            // What the extraction read and what was finally written are two
+            // different things the moment a reviewer corrects a field, and the
+            // artifacts above only ever hold the first. Null for every receipt
+            // that produced no transaction — pending, rejected, failed.
+            'transaction' => $this->transaction !== null
+                ? TransactionResource::make($this->transaction->load(['merchant', 'location', 'items.product']))
+                : null,
         ];
     }
 

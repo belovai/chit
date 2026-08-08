@@ -4,6 +4,7 @@ import type {
   MerchantLocation,
   MerchantPayload,
   MerchantLocationPayload,
+  LocationSuggestResult,
 } from '@/types/merchant'
 import type { MerchantMatch } from '@/types/transaction'
 
@@ -61,5 +62,12 @@ export const merchantService = {
 
   suggest(token: string, query: string) {
     return apiRequest<MerchantMatch[]>('/api/merchants/suggest', { token, query: { query } })
+  },
+
+  suggestLocations(token: string, merchantHashId: string, address?: string) {
+    return apiRequest<LocationSuggestResult>(`/api/merchants/${merchantHashId}/locations/suggest`, {
+      token,
+      query: address === undefined || address === '' ? undefined : { address },
+    })
   },
 }

@@ -22,3 +22,15 @@ export interface MerchantLocationPayload {
   latitude: number | null
   longitude: number | null
 }
+
+export interface LocationSuggestion {
+  hash_id: string
+  address: string | null
+  score: number | null
+}
+
+export interface LocationSuggestResult {
+  candidates: LocationSuggestion[]
+  accepted_hash_id: string | null
+  ambiguous: boolean
+}

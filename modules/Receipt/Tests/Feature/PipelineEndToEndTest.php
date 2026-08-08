@@ -21,6 +21,7 @@ use Modules\Pipeline\Actions\StartRun;
 use Modules\Pipeline\Enums\ArtifactKind;
 use Modules\Pipeline\Enums\RunStatus;
 use Modules\Pipeline\ValueObjects\PendingArtifact;
+use Modules\Product\Models\Product;
 use Modules\Receipt\Actions\ReviewReceipt;
 use Modules\Receipt\Enums\ReceiptStatus;
 use Modules\Receipt\Models\Receipt;
@@ -226,6 +227,39 @@ final class PipelineEndToEndTest extends TestCase
     }
 
     #[Test]
+    public function a_negative_line_item_is_never_matched_or_created_as_a_product(): void
+    {
+        $user = User::factory()->create();
+        Merchant::factory()->for($user, 'owner')->create(['name' => 'OMV']);
+        FakeOcrEngine::returns("OMV\nMaxxMotion 10 l 668.90\nPromocio -10Ft/L\nOSSZESEN 6689", 0.94);
+        FakeDocumentAi::willClassify(DocumentType::Receipt, 0.97);
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'OMV',
+            merchantAddress: null,
+            occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
+            currency: 'HUF',
+            totalMinor: 658900,
+            discountMinor: null,
+            paymentMethod: 'card',
+            // The model occasionally misfiles a discount as a negative line
+            // instead of `discountMinor` — it must never be matched against
+            // products or spawn a new one.
+            items: [new ExtractedLineItem('MaxxMotion Diesel', 1.0, 'l', 668900, 668900),
+                new ExtractedLineItem('Promocio -10Ft/L', 1.0, 'l', -10000, -10000)],
+        ), 0.94);
+
+        $receipt = $this->uploadAndRun($user);
+
+        $transaction = Transaction::query()->findOrFail($receipt->refresh()->transaction_id);
+
+        $this->assertCount(1, $transaction->items);
+        $this->assertSame('MaxxMotion Diesel', $transaction->items->first()->description);
+        $this->assertFalse(
+            Product::query()->where('owner_id', $user->id)->where('name', 'Promocio -10Ft/L')->exists(),
+        );
+    }
+
+    #[Test]
     public function rejecting_a_parked_run_creates_nothing(): void
     {
         $user = User::factory()->create();
@@ -386,6 +420,70 @@ final class PipelineEndToEndTest extends TestCase
         $this->assertSame($picked->id, $transaction?->merchant_id);
         $this->assertNull($transaction?->location_id);
         $this->assertSame(0, MerchantLocation::query()->count());
+    }
+
+    #[Test]
+    public function reassigning_the_merchant_by_searched_hash_id_records_no_branch_from_the_picture(): void
+    {
+        $user = User::factory()->create();
+        $picked = Merchant::factory()->for($user, 'owner')->create(['name' => 'MOL']);
+
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            merchantName: 'OMV',
+            merchantAddress: '6800 Hódmezővásárhely, Kutasi út 17.',
+            occurredAt: CarbonImmutable::parse('2026-07-14 17:14:00'),
+            currency: 'HUF',
+            totalMinor: 3759200,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [],
+        ));
+
+        $receipt = $this->uploadAndRun($user);
+
+        app(ReviewReceipt::class)->approve($receipt->refresh(), ['merchant_hash_id' => $picked->hash_id]);
+
+        $transaction = $receipt->refresh()->transaction;
+
+        $this->assertSame($picked->id, $transaction?->merchant_id);
+        $this->assertNull($transaction?->location_id);
+        $this->assertSame(0, MerchantLocation::query()->count());
+    }
+
+    #[Test]
+    public function a_reassigned_merchant_keeps_the_printed_address_when_the_reviewer_confirms_it(): void
+    {
+        $user = User::factory()->create();
+        $picked = Merchant::factory()->for($user, 'owner')->create(['name' => 'OMV']);
+
+        FakeDocumentAi::willExtract(new ExtractedReceipt(
+            // A fuel station prints its operating company, not the brand — the
+            // reviewer corrects the name, and the address on the picture is
+            // still the branch they stood in, so the review screen sends it
+            // back alongside the new merchant.
+            merchantName: 'ATLANTA KFT',
+            merchantAddress: '8175 Balatonfűzfő, Árpád út 1',
+            occurredAt: CarbonImmutable::parse('2024-08-04 10:39:00'),
+            currency: 'HUF',
+            totalMinor: 2287700,
+            discountMinor: null,
+            paymentMethod: 'card',
+            items: [],
+        ));
+
+        $receipt = $this->uploadAndRun($user);
+
+        app(ReviewReceipt::class)->approve($receipt->refresh(), [
+            'merchant_hash_id' => $picked->hash_id,
+            'location_address' => '8175 Balatonfűzfő, Árpád út 1',
+        ]);
+
+        $transaction = $receipt->refresh()->transaction;
+        $location = MerchantLocation::query()->findOrFail($transaction?->location_id);
+
+        $this->assertSame($picked->id, $transaction?->merchant_id);
+        $this->assertSame($picked->id, $location->merchant_id);
+        $this->assertSame('8175 Balatonfűzfő, Árpád út 1', $location->address);
     }
 
     #[Test]
