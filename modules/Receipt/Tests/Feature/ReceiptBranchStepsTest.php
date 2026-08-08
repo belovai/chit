@@ -397,6 +397,44 @@ final class ReceiptBranchStepsTest extends TestCase
     }
 
     #[Test]
+    public function a_selected_product_hash_id_wins(): void
+    {
+        [$receipt, $run] = $this->receiptRun();
+        $picked = Product::factory()->for($receipt->owner, 'owner')->create(['name' => 'Falusi tej']);
+        $foreign = Product::factory()->create(['name' => 'Masik gazda teje']);
+        $step = $this->stepRow($run, 'create_transaction', 'commit');
+
+        $this->seedArtifact($step, 'extracted_receipt', ['payload' => $this->receiptPayload()]);
+        $this->seedArtifact($step, 'merchant_candidates', ['raw_name' => 'ALDI Hodmezovasarhely', 'accepted_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'location_candidate', ['raw_address' => null, 'accepted_id' => null, 'accepted_hash_id' => null, 'candidates' => []]);
+        $this->seedArtifact($step, 'product_matches', ['items' => [
+            ['item_index' => 0, 'description' => 'Tej 2.8%', 'accepted_id' => null, 'candidates' => []],
+            ['item_index' => 1, 'description' => 'Kenyer', 'accepted_id' => null, 'candidates' => []],
+        ]]);
+        $this->seedArtifact($step, 'review_decision', [
+            'decision' => 'approve',
+            'values' => [
+                'items' => [
+                    ['item_index' => 0, 'product_hash_id' => $picked->hash_id],
+                    ['item_index' => 1, 'product_hash_id' => $foreign->hash_id],
+                ],
+            ],
+        ]);
+
+        app(CreateTransactionStep::class)->handle($this->contextFor($step));
+
+        $transaction = Transaction::query()->firstOrFail();
+        $tej = $transaction->items()->where('description', 'Tej 2.8%')->firstOrFail();
+        $kenyer = $transaction->items()->where('description', 'Kenyer')->firstOrFail();
+
+        $this->assertSame($picked->id, $tej->product_id);
+        // Another owner's row is not theirs to reference — the line falls back
+        // to creating their own product from the printed description.
+        $this->assertNotSame($foreign->id, $kenyer->product_id);
+        $this->assertSame($receipt->owner_id, $kenyer->product?->owner_id);
+    }
+
+    #[Test]
     public function a_reviewed_product_name_creates_a_new_product_instead_of_using_the_description(): void
     {
         [$receipt, $run] = $this->receiptRun();

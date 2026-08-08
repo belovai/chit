@@ -17,6 +17,7 @@ use Modules\Pipeline\Exceptions\StepException;
 use Modules\Pipeline\ValueObjects\StepContext;
 use Modules\Pipeline\ValueObjects\StepResult;
 use Modules\Product\Actions\CreateProduct;
+use Modules\Product\Models\Product;
 use Modules\Receipt\Services\ArtifactCodec;
 use Modules\Transaction\Actions\CreateTransaction;
 
@@ -307,9 +308,7 @@ final class CreateTransactionStep implements PipelineStep
             $override = $itemOverrides[$index] ?? null;
 
             if ($override !== null) {
-                $productId = isset($override['product_id']) && is_numeric($override['product_id'])
-                    ? (int) $override['product_id']
-                    : null;
+                $productId = $this->overrideProductId($context->ownerId(), $override);
             } else {
                 $productId = $matches[$index]['accepted_id'] ?? null;
             }
@@ -337,5 +336,33 @@ final class CreateTransactionStep implements PipelineStep
         }
 
         return $items;
+    }
+
+    /**
+     * The review screen resolves a product the same way it resolves a merchant:
+     * by hash id, because the suggest endpoint it types against exposes no
+     * numeric ids. The pipeline's own candidates carry `product_id`, so both
+     * forms are read here — a hash id that matches nothing belongs to another
+     * owner and falls through to "create it on approval", never to their row.
+     *
+     * @param  array<string, mixed>  $override
+     */
+    private function overrideProductId(int $ownerId, array $override): ?int
+    {
+        $hashId = $override['product_hash_id'] ?? null;
+
+        if (is_string($hashId) && $hashId !== '') {
+            /** @var int|null $id */
+            $id = Product::query()
+                ->where('owner_id', $ownerId)
+                ->where('hash_id', $hashId)
+                ->value('id');
+
+            return $id;
+        }
+
+        return isset($override['product_id']) && is_numeric($override['product_id'])
+            ? (int) $override['product_id']
+            : null;
     }
 }

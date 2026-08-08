@@ -3,6 +3,12 @@ export default {
   empty: 'No pipeline runs yet.',
   loadMore: 'Load more',
 
+  // Keyed by the code the API returns verbatim (see bootstrap/app.php). The
+  // `error` block below is the same text under the keys the runs screen builds
+  // itself from a step's own status.
+  run_not_retryable: 'This run is still going — wait for it to finish.',
+  run_not_awaiting_manual: 'This run is not waiting for a decision.',
+
   status: {
     queued: 'Queued',
     running: 'Running',

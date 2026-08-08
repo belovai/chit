@@ -106,6 +106,8 @@ final class AdvanceRun implements ShouldQueue
             }
 
             if ($plan->isAwaitingManual) {
+                $this->parkIfSettled($run, $current);
+
                 return;
             }
 
@@ -115,6 +117,45 @@ final class AdvanceRun implements ShouldQueue
 
             return;
         }
+    }
+
+    /**
+     * Retrying a step while the run is parked flips the run to `running`, but
+     * the gate holding it is reached by stage order rather than by `depends_on`
+     * — so it is never part of that retry's downstream closure and stays
+     * `awaiting_manual`. Once the reopened steps settle, the run is parked
+     * again and has to say so: left `running`, it is a run nobody can resume,
+     * because every resume path (review, manual decision) accepts only
+     * `awaiting_manual`.
+     *
+     * Only once nothing else is in flight — otherwise the loop's own early
+     * return on `awaiting_manual` would abandon steps mid-run. Pending steps do
+     * not count: this point is only reached when the plan found none of them
+     * ready, which means they are the ones waiting behind the gate.
+     *
+     * @param  Collection<int, PipelineRunStep>  $current
+     */
+    private function parkIfSettled(PipelineRun $run, Collection $current): void
+    {
+        if ($run->status === RunStatus::AwaitingManual) {
+            return;
+        }
+
+        $stillWorking = $current->contains(
+            fn (PipelineRunStep $step): bool => in_array(
+                $step->status,
+                [StepStatus::Queued, StepStatus::Running],
+                true,
+            ),
+        );
+
+        if ($stillWorking) {
+            return;
+        }
+
+        $this->transition($run, RunStatus::AwaitingManual, [
+            'expires_at' => now()->addDays((int) config('pipeline.gate.expire_after_days')),
+        ]);
     }
 
     /**

@@ -9,6 +9,10 @@ export default {
   backToList: 'Back to receipts',
   view: 'View',
 
+  // Keyed by the code the API returns verbatim (see bootstrap/app.php), so
+  // `translateErrorCode` resolves it without a second mapping to keep in sync.
+  not_awaiting_review: 'This document is no longer waiting for a decision — reload the page.',
+
   status: {
     pending: 'Queued',
     processing: 'Processing',
@@ -35,7 +39,7 @@ export default {
     reject: 'Reject',
     rejectTitle: 'Reject this document?',
     rejectBody: 'No transaction will be created. The file is kept.',
-    newProduct: 'Create as a new product',
+    productPlaceholder: 'Product name',
     negativeItemIsDiscount: 'Negative amount — treated as a discount, not matched to a product.',
     pickMerchant: 'Pick a merchant',
     noCandidates: 'No matches found.',

@@ -152,6 +152,30 @@ final class RetryRunTest extends TestCase
         $this->assertNull($run->expires_at);
     }
 
+    /**
+     * The gate is reached by stage order, not by `depends_on`, so no downstream
+     * closure ever contains it — a retry from a parked run flips the run to
+     * `running` and leaves the gate open. Once the reopened step settles, the
+     * run has to be parked again: `awaiting_manual` is the only status any
+     * resume path accepts, so a run left `running` here can never be approved.
+     */
+    #[Test]
+    public function retrying_from_a_parked_run_parks_it_again(): void
+    {
+        $user = User::factory()->create();
+        $run = app(StartRun::class)->handle('fake_expandable', $user->id)->refresh();
+        $this->assertSame(RunStatus::AwaitingManual, $run->status);
+
+        app(RetryRun::class)->handle($run, RetryMode::From, 'fake_expanding');
+        $run->refresh();
+
+        $steps = $run->currentSteps()->keyBy('step_key');
+        $this->assertSame(RunStatus::AwaitingManual, $run->status);
+        $this->assertSame(StepStatus::AwaitingManual, $steps['fake_gate']->status);
+        $this->assertSame(StepStatus::Pending, $steps['fake_success']->status);
+        $this->assertNotNull($run->expires_at);
+    }
+
     #[Test]
     public function cancelling_an_already_finished_run_changes_nothing(): void
     {

@@ -12,13 +12,15 @@ import AppBadge, { type BadgeVariant } from '@/components/ui/AppBadge.vue'
 import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import FindingList from '@/components/pipeline/FindingList.vue'
 import ReviewFieldRow from '@/components/receipt/ReviewFieldRow.vue'
-import CandidatePicker from '@/components/receipt/CandidatePicker.vue'
+import ProductResolver from '@/components/receipt/ProductResolver.vue'
 import MerchantResolver from '@/components/receipt/MerchantResolver.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useHeartbeatStore } from '@/stores/heartbeat'
 import { receiptService } from '@/services/receipt'
 import { pipelineService } from '@/services/pipeline'
 import { formatDateTime } from '@/utils/datetime'
+import { translateErrorCode } from '@/utils/errors'
+import { ApiError } from '@/types/auth'
 import type { Candidate, ReceiptDetail, ReceiptFinding, ReceiptStatus } from '@/types/receipt'
 import type { PaymentMethod, TransactionItem } from '@/types/transaction'
 
@@ -67,11 +69,16 @@ interface ExtractedItem {
   total_minor: number | null
 }
 
-interface ItemOverride {
-  item_index: number
-  product_id: number | null
+// What the resolver decided for one line: an existing product by hash id (or
+// by numeric id, for a chip the pipeline proposed), or a name to create on
+// approval.
+interface ProductSelection {
+  product_hash_id?: string
+  product_id?: number | null
   product_name?: string
 }
+
+type ItemOverride = ProductSelection & { item_index: number }
 
 export default defineComponent({
   name: 'ReceiptReviewView',
@@ -87,7 +94,7 @@ export default defineComponent({
     ConfirmDialog,
     FindingList,
     ReviewFieldRow,
-    CandidatePicker,
+    ProductResolver,
     MerchantResolver,
   },
 
@@ -207,7 +214,10 @@ export default defineComponent({
     },
 
     itemsSubtotalMinor(): number {
-      return this.extractedItems.reduce((sum, item) => sum + this.itemLineTotalMinor(item), 0)
+      return this.extractedItems.reduce((sum, item) => {
+        const lineTotal = this.itemLineTotalMinor(item)
+        return lineTotal < 0 ? sum : sum + lineTotal
+      }, 0)
     },
 
     // What the recognized items and discount imply the total should be — the
@@ -246,7 +256,7 @@ export default defineComponent({
         }
         await this.loadImage()
       } catch (err) {
-        this.error = err instanceof Error ? err.message : String(err)
+        this.error = this.errorText(err)
       } finally {
         this.isLoading = false
       }
@@ -275,7 +285,7 @@ export default defineComponent({
       const values: Record<string, unknown> = {}
 
       for (const field of this.fields) {
-        // The line items themselves are resolved through CandidatePicker
+        // The line items themselves are resolved through ProductResolver
         // selections rather than typed, but the discount they reconcile
         // against is a plain number the reviewer can correct.
         if (field === 'items') {
@@ -284,7 +294,7 @@ export default defineComponent({
           continue
         }
 
-        // Resolved through a CandidatePicker selection, not typed directly.
+        // Resolved through a MerchantResolver selection, not typed directly.
         if (field === 'merchant') continue
 
         if (field === 'total_minor') {
@@ -299,6 +309,15 @@ export default defineComponent({
 
       this.values = values
       this.originalValues = { ...values }
+    },
+
+    // An ApiError carries the backend's error *code*, not a sentence — printing
+    // it raw is how `receipts.not_awaiting_review` ended up on screen.
+    errorText(err: unknown): string {
+      if (err instanceof ApiError) {
+        return this.te(err.message) ? translateErrorCode(this.t, err.message) : err.message
+      }
+      return err instanceof Error ? err.message : String(err)
     },
 
     fieldLabel(key: string): string {
@@ -397,16 +416,12 @@ export default defineComponent({
         ? (this.values.items as ItemOverride[])
         : []
       const override = overrides.find((entry) => entry.item_index === index)
-      if (override) return override.product_id
+      if (override) return override.product_id ?? null
       return this.receipt?.candidates.products?.items[index]?.accepted_id ?? null
     },
 
-    selectProduct(index: number, id: number) {
-      this.setItemOverride(index, { item_index: index, product_id: id })
-    },
-
-    createProduct(index: number, name: string) {
-      this.setItemOverride(index, { item_index: index, product_id: null, product_name: name })
+    applyProductSelection(index: number, selection: ProductSelection) {
+      this.setItemOverride(index, { item_index: index, ...selection })
     },
 
     setItemOverride(index: number, entry: ItemOverride) {
@@ -441,7 +456,7 @@ export default defineComponent({
         useHeartbeatStore().poll()
         await this.$router.push({ name: 'receipts' })
       } catch (err) {
-        this.error = err instanceof Error ? err.message : String(err)
+        this.error = this.errorText(err)
       } finally {
         this.isSubmitting = false
       }
@@ -456,7 +471,7 @@ export default defineComponent({
         useHeartbeatStore().poll()
         await this.$router.push({ name: 'receipts' })
       } catch (err) {
-        this.error = err instanceof Error ? err.message : String(err)
+        this.error = this.errorText(err)
       } finally {
         this.isSubmitting = false
       }
@@ -699,14 +714,14 @@ export default defineComponent({
                   <p v-if="itemLineTotalMinor(item) < 0" class="text-xs text-neutral-500">
                     {{ t('receipts.review.negativeItemIsDiscount') }}
                   </p>
-                  <CandidatePicker
+                  <ProductResolver
                     v-else
                     :candidates="productCandidatesFor(index)"
                     :accepted-id="productAcceptedIdFor(index)"
                     :raw-name="item.description"
-                    :create-label="t('receipts.review.newProduct')"
-                    @select="(id: number) => selectProduct(index, id)"
-                    @create="(name: string) => createProduct(index, name)"
+                    @update:selection="
+                      (selection: ProductSelection) => applyProductSelection(index, selection)
+                    "
                   />
                 </div>
               </div>
