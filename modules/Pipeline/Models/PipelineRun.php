@@ -41,6 +41,7 @@ use Modules\User\Models\User;
  * @property Carbon|null $deleted_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property int|null $ai_credential_id
  * @property-read Collection<int, PipelineArtifact> $artifacts
  * @property-read int|null $artifacts_count
  * @property-read User|null $owner
@@ -53,6 +54,7 @@ use Modules\User\Models\User;
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PipelineRun newQuery()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PipelineRun onlyTrashed()
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PipelineRun query()
+ * @method static \Illuminate\Database\Eloquent\Builder<static>|PipelineRun whereAiCredentialId($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PipelineRun whereCostUsdMicros($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PipelineRun whereCreatedAt($value)
  * @method static \Illuminate\Database\Eloquent\Builder<static>|PipelineRun whereDefinitionKey($value)
@@ -81,6 +83,7 @@ use Modules\User\Models\User;
  */
 #[Fillable(
     'owner_id',
+    'ai_credential_id',
     'subject_type',
     'subject_id',
     'definition_key',

@@ -21,6 +21,7 @@ final readonly class StepContext
         private array $artifacts,
         private array $config,
         private int $ownerId,
+        private ?int $aiCredentialId,
         private ?Model $subject,
         private int $attempt,
     ) {}
@@ -43,6 +44,15 @@ final readonly class StepContext
     public function ownerId(): int
     {
         return $this->ownerId;
+    }
+
+    /**
+     * The credential this run was started with. Opaque here — the Ai module
+     * turns it into a usable connection.
+     */
+    public function aiCredentialId(): ?int
+    {
+        return $this->aiCredentialId;
     }
 
     public function subject(): ?Model

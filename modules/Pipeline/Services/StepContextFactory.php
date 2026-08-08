@@ -21,6 +21,7 @@ final class StepContextFactory
             artifacts: $this->artifacts->liveFor($run),
             config: $step->config ?? [],
             ownerId: $run->owner_id,
+            aiCredentialId: $run->ai_credential_id,
             subject: $run->subject,
             attempt: $step->attempt,
         );

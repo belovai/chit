@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extraction\Ai\ValueObjects;
 
+use Modules\Ai\ValueObjects\AiUsage;
 use Modules\Extraction\Enums\DocumentType;
 
 final readonly class ClassificationResult

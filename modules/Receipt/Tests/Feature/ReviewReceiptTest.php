@@ -7,6 +7,7 @@ namespace Modules\Receipt\Tests\Feature;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Modules\Ai\Models\AiCredential;
 use Modules\Extraction\Ai\Testing\FakeDocumentAi;
 use Modules\Extraction\Ai\ValueObjects\ExtractedLineItem;
 use Modules\Extraction\Ai\ValueObjects\ExtractedReceipt;
@@ -32,7 +33,7 @@ final class ReviewReceiptTest extends TestCase
         FakeOcrEngine::reset();
         FakeDocumentAi::reset();
         config()->set('extraction.ocr.engine', 'fake');
-        config()->set('extraction.ai.provider', 'fake');
+        config()->set('extraction.ai.fake_documents', true);
         config()->set('receipt.gate.max_warnings', 0);
 
         FakeOcrEngine::returns('ALDI ...', 0.94);
@@ -53,7 +54,8 @@ final class ReviewReceiptTest extends TestCase
         $receipt = Receipt::factory()->for($user, 'owner')->create([
             'disk' => 'local', 'path' => 'receipts/a.png', 'mime' => 'image/png',
         ]);
-        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt);
+        $credential = AiCredential::factory()->for($user, 'owner')->active()->create();
+        $run = app(StartRun::class)->handle('receipt_ingest', $user->id, subject: $receipt, aiCredentialId: $credential->id);
         $receipt->update(['current_run_id' => $run->id]);
         $receipt->refresh();
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Extraction\Ai\ValueObjects;
+namespace Modules\Ai\ValueObjects;
 
 final readonly class AiUsage
 {

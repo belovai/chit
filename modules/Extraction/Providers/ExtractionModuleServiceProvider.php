@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace Modules\Extraction\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use InvalidArgumentException;
-use Modules\Extraction\Ai\Anthropic\AnthropicDocumentAi;
 use Modules\Extraction\Ai\Contracts\DocumentClassifier;
 use Modules\Extraction\Ai\Contracts\DocumentExtractor;
-use Modules\Extraction\Ai\Support\CostCalculator;
+use Modules\Extraction\Ai\DocumentAi;
 use Modules\Extraction\Ai\Testing\FakeDocumentAi;
 use Modules\Extraction\Ocr\Contracts\OcrEngine;
 use Modules\Extraction\Ocr\TesseractOcrEngine;
@@ -28,17 +26,11 @@ final class ExtractionModuleServiceProvider extends ServiceProvider
             };
         });
 
-        $this->app->singleton(CostCalculator::class);
-
         foreach ([DocumentClassifier::class, DocumentExtractor::class] as $contract) {
             $this->app->bind($contract, function (): object {
-                return match ((string) config('extraction.ai.provider')) {
-                    'fake' => new FakeDocumentAi,
-                    'anthropic' => $this->app->make(AnthropicDocumentAi::class),
-                    default => throw new InvalidArgumentException(
-                        'Unknown extraction AI provider ['.config('extraction.ai.provider').'].',
-                    ),
-                };
+                return (bool) config('extraction.ai.fake_documents')
+                    ? new FakeDocumentAi
+                    : $this->app->make(DocumentAi::class);
             });
         }
     }

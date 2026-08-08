@@ -16,20 +16,8 @@ return [
     ],
 
     'ai' => [
-        'provider' => env('EXTRACTION_AI_PROVIDER', 'anthropic'),
-        'model' => env('EXTRACTION_AI_MODEL', 'claude-opus-5'),
-        'max_tokens' => env('EXTRACTION_AI_MAX_TOKENS', 8000),
-        // low/medium/high/xhigh/max — extraction is a structured read, not a
-        // reasoning problem, so it does not need a high setting.
-        'effort' => env('EXTRACTION_AI_EFFORT', 'low'),
-        'api_key' => env('ANTHROPIC_API_KEY'),
-
-        // USD per million tokens, used to turn reported usage into a cost figure.
-        // Keyed by model id so switching models does not silently mis-price runs.
-        'pricing' => [
-            'claude-opus-5' => ['input' => 5.00, 'output' => 25.00, 'cached_input' => 0.50],
-            'claude-sonnet-5' => ['input' => 3.00, 'output' => 15.00, 'cached_input' => 0.30],
-            'claude-haiku-4-5' => ['input' => 1.00, 'output' => 5.00, 'cached_input' => 0.10],
-        ],
+        // Binds FakeDocumentAi instead of the real DocumentAi. Tests only —
+        // provider, model, token budget and key all live on the user's credential.
+        'fake_documents' => env('EXTRACTION_FAKE_DOCUMENTS', false),
     ],
 ];

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Extraction\Exceptions;
+namespace Modules\Ai\Exceptions;
 
 use RuntimeException;
 use Throwable;
@@ -29,5 +29,19 @@ final class AiException extends RuntimeException
     public function isRetryable(): bool
     {
         return $this->retryable;
+    }
+
+    /**
+     * Distinguishes "this key is wrong" from "the vendor is having a bad day".
+     * Only the former should count against a credential's health.
+     */
+    public function isAuthFailure(): bool
+    {
+        if ($this->isRetryable()) {
+            return false;
+        }
+
+        return str_starts_with($this->getMessage(), 'authentication_error')
+            || str_starts_with($this->getMessage(), 'permission_error');
     }
 }

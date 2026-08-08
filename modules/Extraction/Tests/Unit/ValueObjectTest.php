@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\Extraction\Tests\Unit;
 
 use Carbon\CarbonImmutable;
-use Modules\Extraction\Ai\ValueObjects\AiUsage;
+use Modules\Ai\Exceptions\AiException;
+use Modules\Ai\ValueObjects\AiUsage;
 use Modules\Extraction\Ai\ValueObjects\ExtractedLineItem;
 use Modules\Extraction\Ai\ValueObjects\ExtractedReceipt;
 use Modules\Extraction\Enums\DocumentType;
-use Modules\Extraction\Exceptions\AiException;
 use Modules\Extraction\Ocr\ValueObjects\OcrResult;
 use PHPUnit\Framework\Attributes\Test;
 use Tests\TestCase;

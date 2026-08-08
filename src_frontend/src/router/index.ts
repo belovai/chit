@@ -122,6 +122,27 @@ const router = createRouter({
               name: 'settings-tags',
               component: () => import('../views/settings/SettingsTagsView.vue'),
             },
+            {
+              path: 'ai',
+              name: 'settings-ai',
+              component: () => import('../views/settings/SettingsAiView.vue'),
+              children: [
+                {
+                  path: 'new',
+                  name: 'settings-ai-new',
+                  components: {
+                    modal: () => import('../views/settings/AiCredentialFormSlideOver.vue'),
+                  },
+                },
+                {
+                  path: ':hashId',
+                  name: 'settings-ai-edit',
+                  components: {
+                    modal: () => import('../views/settings/AiCredentialFormSlideOver.vue'),
+                  },
+                },
+              ],
+            },
           ],
         },
       ],

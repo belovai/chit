@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Modules\Ai\Exceptions\NoActiveAiCredentialException;
 use Modules\Pipeline\Exceptions\RunNotAwaitingManualException;
 use Modules\Pipeline\Exceptions\RunNotRetryableException;
 use Modules\Receipt\Exceptions\ReceiptNotAwaitingReviewException;
@@ -50,4 +51,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'data' => [],
             'status' => 409,
         ], 409));
+
+        $exceptions->render(fn (NoActiveAiCredentialException $e) => response()->json([
+            'message' => $e->getMessage(),
+            'data' => [],
+            'status' => 422,
+        ], 422));
     })->create();

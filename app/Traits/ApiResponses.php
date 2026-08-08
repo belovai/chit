@@ -57,7 +57,7 @@ trait ApiResponses
                 'meta' => array_merge($resolved['meta'] ?? [], $meta),
                 'links' => $resolved['links'] ?? [],
                 'status' => $statusCode,
-            ], $statusCode);
+            ], $statusCode, options: JSON_PRESERVE_ZERO_FRACTION);
         }
 
         $payload = [
@@ -70,6 +70,6 @@ trait ApiResponses
             $payload['meta'] = $meta;
         }
 
-        return response()->json($payload, $statusCode);
+        return response()->json($payload, $statusCode, options: JSON_PRESERVE_ZERO_FRACTION);
     }
 }

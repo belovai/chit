@@ -24,6 +24,7 @@ final class PipelineRunFactory extends Factory
     {
         return [
             'owner_id' => User::factory(),
+            'ai_credential_id' => null,
             'definition_key' => 'fake_linear',
             'definition_version' => 1,
             'stages' => ['alpha', 'beta', 'gamma'],

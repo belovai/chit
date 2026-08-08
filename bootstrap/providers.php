@@ -2,6 +2,7 @@
 
 use App\Providers\AppServiceProvider;
 use App\Providers\HorizonServiceProvider;
+use Modules\Ai\Providers\AiModuleServiceProvider;
 use Modules\Auth\Providers\AuthModuleServiceProvider;
 use Modules\Extraction\Providers\ExtractionModuleServiceProvider;
 use Modules\Merchant\Providers\MerchantModuleServiceProvider;
@@ -23,4 +24,5 @@ return [
     TransactionModuleServiceProvider::class,
     ExtractionModuleServiceProvider::class,
     ReceiptModuleServiceProvider::class,
+    AiModuleServiceProvider::class,
 ];

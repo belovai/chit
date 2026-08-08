@@ -27,6 +27,11 @@ return [
         'products',
         'merchants',
         'pipeline_runs',
+        // Both reference ai_credentials with nullOnDelete, so there is no RESTRICT
+        // wave to sequence around — listing them keeps the purge explicit instead
+        // of relying on the users cascade.
+        'ai_usage_logs',
+        'ai_credentials',
     ],
 
 ];

@@ -32,7 +32,7 @@ final class UtilityBranchStepsTest extends TestCase
     {
         parent::setUp();
         FakeDocumentAi::reset();
-        config()->set('extraction.ai.provider', 'fake');
+        config()->set('extraction.ai.fake_documents', true);
     }
 
     /**

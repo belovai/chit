@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Receipt\Tests\Support;
 
 use Illuminate\Support\Facades\Storage;
+use Modules\Ai\Models\AiCredential;
 use Modules\Pipeline\Enums\ArtifactKind;
 use Modules\Pipeline\Enums\StepStatus;
 use Modules\Pipeline\Models\PipelineRun;
@@ -29,8 +30,10 @@ trait MakesReceiptRuns
     protected function receiptRun(array $receiptOverrides = []): array
     {
         $user = User::factory()->create();
+        $credential = AiCredential::factory()->for($user, 'owner')->active()->create();
         $receipt = Receipt::factory()->for($user, 'owner')->create($receiptOverrides);
         $run = PipelineRun::factory()->for($user, 'owner')->create([
+            'ai_credential_id' => $credential->id,
             'subject_type' => Receipt::class,
             'subject_id' => $receipt->id,
             'stages' => ['ingest', 'prepare', 'read', 'classify', 'extract', 'resolve', 'validate', 'review', 'commit'],
