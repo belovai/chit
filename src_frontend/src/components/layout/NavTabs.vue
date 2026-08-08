@@ -1,6 +1,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { mapState } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { useHeartbeatStore } from '@/stores/heartbeat'
 
 export default defineComponent({
   name: 'NavTabs',
@@ -14,15 +16,9 @@ export default defineComponent({
     return { t }
   },
 
-  data() {
-    return {
-      // Placeholder — replaced once the Receipt module exposes a real
-      // needs-review count query.
-      needsReviewCount: 3,
-    }
-  },
-
   computed: {
+    ...mapState(useHeartbeatStore, { needsReviewCount: 'receiptsNeedsReview' }),
+
     isSettingsActive(): boolean {
       return this.$route.path.startsWith('/settings')
     },

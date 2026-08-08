@@ -20,6 +20,7 @@ interface ApiEnvelope<T> {
 interface PaginationMeta {
   current_page: number
   last_page: number
+  total: number
 }
 
 interface PaginatedEnvelope<T> extends ApiEnvelope<T[]> {
@@ -30,6 +31,7 @@ export interface PaginatedResult<T> {
   data: T[]
   currentPage: number
   lastPage: number
+  total: number
 }
 
 function buildUrl(path: string, query?: Record<string, string | number>): string {
@@ -132,5 +134,6 @@ export async function apiRequestPaginated<T>(
     data: envelope.data,
     currentPage: envelope.meta.current_page,
     lastPage: envelope.meta.last_page,
+    total: envelope.meta.total,
   }
 }

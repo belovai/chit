@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { authService } from '@/services/auth'
+import { useHeartbeatStore } from '@/stores/heartbeat'
 import { ApiError, type LoginPayload, type RegisterPayload, type User } from '@/types/auth'
 
 const TOKEN_STORAGE_KEY = 'chit.auth.token'
@@ -87,6 +88,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = user
       localStorage.setItem(TOKEN_STORAGE_KEY, token)
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
+      useHeartbeatStore().start()
     },
 
     clear() {
@@ -94,6 +96,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null
       localStorage.removeItem(TOKEN_STORAGE_KEY)
       localStorage.removeItem(USER_STORAGE_KEY)
+      useHeartbeatStore().stop()
     },
 
     resetErrors() {

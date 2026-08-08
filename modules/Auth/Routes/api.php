@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Auth\Controllers\HeartbeatController;
 use Modules\Auth\Controllers\LoginController;
 use Modules\Auth\Controllers\LogoutController;
 use Modules\Auth\Controllers\RegisterController;
@@ -20,4 +21,5 @@ Route::middleware(['api', 'auth:sanctum'])
     ->name('api.auth.')
     ->group(function () {
         Route::post('logout', LogoutController::class)->name('logout');
+        Route::get('heartbeat', HeartbeatController::class)->name('heartbeat');
     });

@@ -15,6 +15,7 @@ import ReviewFieldRow from '@/components/receipt/ReviewFieldRow.vue'
 import CandidatePicker from '@/components/receipt/CandidatePicker.vue'
 import MerchantResolver from '@/components/receipt/MerchantResolver.vue'
 import { useAuthStore } from '@/stores/auth'
+import { useHeartbeatStore } from '@/stores/heartbeat'
 import { receiptService } from '@/services/receipt'
 import { pipelineService } from '@/services/pipeline'
 import { formatDateTime } from '@/utils/datetime'
@@ -437,6 +438,7 @@ export default defineComponent({
       this.isSubmitting = true
       try {
         await this.submit()
+        useHeartbeatStore().poll()
         await this.$router.push({ name: 'receipts' })
       } catch (err) {
         this.error = err instanceof Error ? err.message : String(err)
@@ -451,6 +453,7 @@ export default defineComponent({
       this.isSubmitting = true
       try {
         await receiptService.review(this.token as string, this.hashId, { decision: 'reject' })
+        useHeartbeatStore().poll()
         await this.$router.push({ name: 'receipts' })
       } catch (err) {
         this.error = err instanceof Error ? err.message : String(err)
