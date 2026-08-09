@@ -11,11 +11,11 @@ use Modules\Pipeline\ValueObjects\StepResult;
 use Modules\Receipt\Services\ArtifactCodec;
 
 /**
- * Same matching as match_merchant — a utility company is a merchant — plus one
+ * Same matching as match_merchant - a utility company is a merchant - plus one
  * extra job: projecting the series key that link_series looks up.
  *
  * The series key is emitted as an artifact rather than written to the receipt
- * directly — ProjectReceiptFields is the single writer of that column, same
+ * directly - ProjectReceiptFields is the single writer of that column, same
  * discipline as doc_type from classify_document.
  */
 final class MatchProviderStep implements PipelineStep

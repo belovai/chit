@@ -21,7 +21,7 @@ final class ChangeAccountPassword
     }
 
     /**
-     * After a password change, tokens issued on other devices become invalid —
+     * After a password change, tokens issued on other devices become invalid -
      * only the one currently in use survives, so the caller isn't logged out immediately.
      */
     private function revokeOtherTokens(User $user): void

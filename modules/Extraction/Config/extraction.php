@@ -16,7 +16,7 @@ return [
     ],
 
     'ai' => [
-        // Binds FakeDocumentAi instead of the real DocumentAi. Tests only —
+        // Binds FakeDocumentAi instead of the real DocumentAi. Tests only -
         // provider, model, token budget and key all live on the user's credential.
         'fake_documents' => env('EXTRACTION_FAKE_DOCUMENTS', false),
     ],

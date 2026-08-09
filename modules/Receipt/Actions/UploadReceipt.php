@@ -25,7 +25,7 @@ final class UploadReceipt
     public function handle(int $ownerId, UploadedFile $file, ?DocumentType $hint = null): Receipt
     {
         // Resolved first so a user without a key gets a synchronous, actionable
-        // error instead of a failed job thirty seconds later — and so no orphan
+        // error instead of a failed job thirty seconds later - and so no orphan
         // file or receipt row is left behind.
         $credential = $this->connections->activeCredentialFor($ownerId);
 
@@ -38,7 +38,7 @@ final class UploadReceipt
         $contents = (string) file_get_contents($file->getRealPath());
 
         // The file lands on disk before the row exists because the row stores
-        // its hash — and the hash is what dedupe_file_hash keys on.
+        // its hash - and the hash is what dedupe_file_hash keys on.
         $file->storeAs('', $path, ['disk' => $disk]);
 
         $receipt = DB::transaction(fn (): Receipt => Receipt::query()->create([

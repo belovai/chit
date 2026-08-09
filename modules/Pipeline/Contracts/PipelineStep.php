@@ -11,7 +11,7 @@ use Modules\Pipeline\ValueObjects\StepResult;
  * The single extension point of the engine. Domain modules implement this and
  * register the class with the StepRegistry; the engine only ever resolves by key.
  *
- * A step must be side-effect free outside the artifacts it declares — that is
+ * A step must be side-effect free outside the artifacts it declares - that is
  * what makes "rerun from this step" replayable.
  */
 interface PipelineStep

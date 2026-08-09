@@ -56,7 +56,7 @@ final class ReviewReceipt
     }
 
     /**
-     * When the classifier could not decide, the run parked before it branched —
+     * When the classifier could not decide, the run parked before it branched -
      * it has no extract step at all. The reviewer's answer is the classification
      * that was missing, so classify_document runs again to expand the right
      * branch, and the gate runs again to judge whatever that branch turns up.
@@ -90,7 +90,7 @@ final class ReviewReceipt
     }
 
     /**
-     * Every corrected field becomes a row. Nothing reads this table yet — it is
+     * Every corrected field becomes a row. Nothing reads this table yet - it is
      * being filled now so that merchant-specific few-shot examples are possible
      * later; six months of corrections cannot be reconstructed after the fact.
      *

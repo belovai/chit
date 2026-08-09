@@ -11,7 +11,7 @@ use Modules\Receipt\Enums\ReceiptStatus;
 use Modules\Receipt\Models\Receipt;
 
 /**
- * The single writer of `receipts.status`. Nothing else may set that column —
+ * The single writer of `receipts.status`. Nothing else may set that column -
  * it is a cached projection of the run, kept as a column only so the receipt
  * list can filter and sort on it.
  */

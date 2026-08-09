@@ -22,7 +22,7 @@ use Modules\Receipt\Services\ArtifactCodec;
 use Modules\Transaction\Actions\CreateTransaction;
 
 /**
- * The only step that writes domain rows, and the last one in the run — so a
+ * The only step that writes domain rows, and the last one in the run - so a
  * failure anywhere upstream leaves no half-created transaction behind.
  *
  * The review decision, when there was one, wins over the extraction: the user
@@ -79,8 +79,8 @@ final class CreateTransactionStep implements PipelineStep
             ?? ($document instanceof ExtractedReceipt ? $document->occurredAt : $document->periodEnd)?->toDateTimeString();
 
         // A discount read off the picture is the single easiest thing to get
-        // wrong — one deduction line counted twice moves the sum but nothing
-        // else — so the reviewer's number wins here like every other field.
+        // wrong - one deduction line counted twice moves the sum but nothing
+        // else - so the reviewer's number wins here like every other field.
         // Keyed on presence, not on `??`: clearing the field means "there was
         // no discount", which must not fall back to what the model read.
         $discount = $document instanceof ExtractedReceipt
@@ -142,7 +142,7 @@ final class CreateTransactionStep implements PipelineStep
                 ->find((int) $candidates['accepted_id']);
         }
 
-        // A new merchant is only created here, on approval — the matching step
+        // A new merchant is only created here, on approval - the matching step
         // deliberately proposes without writing.
         $name = is_string($overrides['merchant_name'] ?? null)
             ? $overrides['merchant_name']
@@ -154,7 +154,7 @@ final class CreateTransactionStep implements PipelineStep
 
         $name = trim($name);
 
-        // The reviewer can type a name that already exists — the review screen
+        // The reviewer can type a name that already exists - the review screen
         // resolves an exact match to a selection, but nothing stops a client
         // from posting the name instead. Exact and case-insensitive on purpose:
         // a fuzzy match here would silently merge two genuinely different shops.
@@ -212,7 +212,7 @@ final class CreateTransactionStep implements PipelineStep
 
         // The printed address is evidence about the shop printed on the receipt.
         // Picking a different merchant by hand replaces that identity, and the
-        // review screen offers the address as a one-click branch right there —
+        // review screen offers the address as a one-click branch right there -
         // so silently filing one shop's address as another shop's branch is a
         // guess the reviewer already declined to make.
         if (isset($overrides['merchant_id']) || isset($overrides['merchant_hash_id'])) {
@@ -221,7 +221,7 @@ final class CreateTransactionStep implements PipelineStep
 
         // Nothing matched and the reviewer typed nothing: the branch is new,
         // and the only address we have is the extracted one. Mirrors how a new
-        // merchant is created above — approval is what writes the row, so a
+        // merchant is created above - approval is what writes the row, so a
         // first receipt from a branch still lands on a real location.
         $extracted = $document instanceof ExtractedReceipt ? trim((string) $document->merchantAddress) : '';
 
@@ -232,7 +232,7 @@ final class CreateTransactionStep implements PipelineStep
      * The same branch may be spelled differently ("Szilleri sgt." vs "Szilléri
      * sugár út"); the normalized key is what decides whether this is the same
      * row. An address that normalizes to nothing ("---") has no such key, so
-     * every receipt carrying it would add another row that can never match —
+     * every receipt carrying it would add another row that can never match -
      * no location at all is the honest answer there.
      */
     private function locationFor(Merchant $merchant, string $address): ?int
@@ -287,7 +287,7 @@ final class CreateTransactionStep implements PipelineStep
         $matches = $context->artifactOrNull('product_matches')?->json()['items'] ?? [];
 
         // The reviewer's per-item pick, keyed by item_index, wins over the
-        // auto-match — same rule as every other field on this document.
+        // auto-match - same rule as every other field on this document.
         $itemOverrides = [];
         foreach ((array) ($overrides['items'] ?? []) as $entry) {
             if (is_array($entry) && isset($entry['item_index']) && is_numeric($entry['item_index'])) {
@@ -298,7 +298,7 @@ final class CreateTransactionStep implements PipelineStep
         $items = [];
 
         foreach ($document->items as $index => $item) {
-            // A negative line is a discount the model misfiled as an item —
+            // A negative line is a discount the model misfiled as an item -
             // never matched or created as a product, same rule the review
             // screen enforces by hiding the picker for these rows.
             if ($item->effectiveTotalMinor() < 0) {
@@ -314,7 +314,7 @@ final class CreateTransactionStep implements PipelineStep
             }
 
             if ($productId === null) {
-                // A new product is only created here, on approval — the matching
+                // A new product is only created here, on approval - the matching
                 // step deliberately proposes without writing, mirroring how a
                 // new merchant is resolved above. There is no gate finding for
                 // an unmatched product: config's `receipt.gate.severity` has no
@@ -342,7 +342,7 @@ final class CreateTransactionStep implements PipelineStep
      * The review screen resolves a product the same way it resolves a merchant:
      * by hash id, because the suggest endpoint it types against exposes no
      * numeric ids. The pipeline's own candidates carry `product_id`, so both
-     * forms are read here — a hash id that matches nothing belongs to another
+     * forms are read here - a hash id that matches nothing belongs to another
      * owner and falls through to "create it on approval", never to their row.
      *
      * @param  array<string, mixed>  $override

@@ -13,7 +13,7 @@ use Throwable;
 /**
  * Turns a schema-shaped payload into DTOs. Deliberately forgiving: a model can
  * violate its own schema, and one bad field must not lose the whole extraction.
- * The gate step decides what a partial result is worth — this layer's job is to
+ * The gate step decides what a partial result is worth - this layer's job is to
  * hand it over intact.
  */
 final class DocumentMapper

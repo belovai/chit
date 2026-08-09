@@ -17,7 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // This app is API-only — there is no web "login" route to redirect
+        // This app is API-only - there is no web "login" route to redirect
         // guests to. Left at the framework default, an unauthenticated
         // request without an explicit `Accept: application/json` header
         // (e.g. a plain `post()` in tests carrying an UploadedFile, which

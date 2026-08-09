@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Extraction\Ai\ValueObjects;
 
-/** Amounts are minor units (fillér/cent) — never floats. See the plan header. */
+/** Amounts are minor units (fillér/cent) - never floats. See the plan header. */
 final readonly class ExtractedLineItem
 {
     public function __construct(

@@ -12,8 +12,8 @@ use Modules\Pipeline\ValueObjects\StepResult;
 use Modules\Receipt\Services\ArtifactCodec;
 
 /**
- * Publishes the uploaded file as artifacts. It does not write the file — upload
- * already did — but every later step reads its input from artifacts only, so
+ * Publishes the uploaded file as artifacts. It does not write the file - upload
+ * already did - but every later step reads its input from artifacts only, so
  * the file reference has to enter the run through this door.
  */
 final class StoreFileStep implements PipelineStep

@@ -73,8 +73,8 @@ final class MerchantLocation extends Model
 
     /**
      * Writing the address also writes its comparison key. This lives on the
-     * model rather than in the actions so that every write path — pipeline,
-     * settings UI, factory, seeder — stays consistent by construction.
+     * model rather than in the actions so that every write path - pipeline,
+     * settings UI, factory, seeder - stays consistent by construction.
      *
      * @return Attribute<string|null, array{address: string|null, normalized_address: string|null}>
      */

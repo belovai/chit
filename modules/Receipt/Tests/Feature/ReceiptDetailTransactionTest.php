@@ -16,7 +16,7 @@ use Tests\TestCase;
 
 /**
  * The extraction artifacts on the receipt detail hold what the model read, and
- * nothing else — so a merchant the reviewer corrected is invisible there. The
+ * nothing else - so a merchant the reviewer corrected is invisible there. The
  * recorded transaction is what closes that gap.
  */
 final class ReceiptDetailTransactionTest extends TestCase

@@ -16,7 +16,7 @@ final class CreateProduct
         $name = $validated['name'];
 
         // Case-insensitive per owner is a DB constraint (products_owner_id_name_unique),
-        // not just a validation rule — callers like the receipt pipeline create
+        // not just a validation rule - callers like the receipt pipeline create
         // products without going through request validation, and two lines on the
         // same receipt can resolve to the same new product name.
         $existing = Product::query()

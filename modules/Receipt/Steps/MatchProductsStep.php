@@ -13,7 +13,7 @@ use Modules\Receipt\Services\ArtifactCodec;
 
 /**
  * Suggests a known product per line item. Unmatched items are the normal case
- * on a first visit, so this step never blocks — the review screen offers the
+ * on a first visit, so this step never blocks - the review screen offers the
  * candidates and the user decides.
  */
 final class MatchProductsStep implements PipelineStep

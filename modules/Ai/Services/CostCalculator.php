@@ -10,7 +10,7 @@ use Modules\Ai\ValueObjects\AiUsage;
 /**
  * Turns reported token usage into USD micros using the rates a provider
  * declares on its ModelDescriptor. An unpriced or unknown model yields 0
- * rather than throwing — a missing price row must never break processing.
+ * rather than throwing - a missing price row must never break processing.
  */
 final class CostCalculator
 {

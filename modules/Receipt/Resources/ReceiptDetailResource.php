@@ -35,7 +35,7 @@ final class ReceiptDetailResource extends JsonResource
             // What the extraction read and what was finally written are two
             // different things the moment a reviewer corrects a field, and the
             // artifacts above only ever hold the first. Null for every receipt
-            // that produced no transaction — pending, rejected, failed.
+            // that produced no transaction - pending, rejected, failed.
             'transaction' => $this->transaction !== null
                 ? TransactionResource::make($this->transaction->load(['merchant', 'location', 'items.product']))
                 : null,

@@ -12,7 +12,7 @@ return [
     | On account deletion, the `users` cascade alone isn't enough: its tables
     | also reference each other, with RESTRICT (transaction_items -> products,
     | transactions -> merchants / merchant_locations). In a single cascade wave
-    | Postgres would run into these, so we empty its own tables in this order —
+    | Postgres would run into these, so we empty its own tables in this order -
     | the child rows (transaction_items, merchant_locations, receipt_corrections,
     | pipeline_run_steps, pipeline_artifacts) are handled by their own cascade.
     |
@@ -28,7 +28,7 @@ return [
         'merchants',
         'pipeline_runs',
         // Both reference ai_credentials with nullOnDelete, so there is no RESTRICT
-        // wave to sequence around — listing them keeps the purge explicit instead
+        // wave to sequence around - listing them keeps the purge explicit instead
         // of relying on the users cascade.
         'ai_usage_logs',
         'ai_credentials',

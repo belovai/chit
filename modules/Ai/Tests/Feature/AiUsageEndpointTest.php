@@ -100,7 +100,7 @@ final class AiUsageEndpointTest extends TestCase
 
         // Not faked here: the sync queue runs PurgeUserData as part of handle(),
         // which is exactly the end state this test is about. Do not call the job
-        // a second time — the user is already force-deleted by then.
+        // a second time - the user is already force-deleted by then.
         app(DeleteAccount::class)->handle($user);
 
         $this->assertSame(0, AiUsageLog::query()->count());

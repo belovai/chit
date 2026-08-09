@@ -9,7 +9,7 @@ namespace Modules\Extraction\Ai\Schemas;
  * shape with whatever mechanism it offers; only the enforcement differs.
  *
  * Structured-output schemas must set additionalProperties: false and list every
- * key in `required` — optional keys are expressed as a nullable type, not by
+ * key in `required` - optional keys are expressed as a nullable type, not by
  * omission from `required`.
  */
 final class ClassificationSchema

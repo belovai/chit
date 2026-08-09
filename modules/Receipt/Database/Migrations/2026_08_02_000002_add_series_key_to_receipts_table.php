@@ -11,7 +11,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('receipts', function (Blueprint $table) {
-            // sha1(provider|customer_reference) — links a utility bill to its
+            // sha1(provider|customer_reference) - links a utility bill to its
             // predecessor without scanning artifact jsonb across every run.
             $table->string('series_key', 40)->nullable()->after('doc_type_hint');
             $table->index(['owner_id', 'series_key']);

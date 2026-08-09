@@ -14,13 +14,13 @@ final class StepException extends RuntimeException
         parent::__construct($message, 0, $previous);
     }
 
-    /** Transient failure (rate limit, timeout, 5xx) — worth another attempt. */
+    /** Transient failure (rate limit, timeout, 5xx) - worth another attempt. */
     public static function retryable(string $message, ?Throwable $previous = null): self
     {
         return new self($message, true, $previous);
     }
 
-    /** Deterministic failure (bad input, parse error) — retrying cannot help. */
+    /** Deterministic failure (bad input, parse error) - retrying cannot help. */
     public static function permanent(string $message, ?Throwable $previous = null): self
     {
         return new self($message, false, $previous);

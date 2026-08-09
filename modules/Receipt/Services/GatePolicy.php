@@ -25,7 +25,7 @@ final readonly class GateDecision
  * The single place that decides whether a run may finish unattended.
  *
  * Steps report what they saw; this decides what it means. Keeping the judgement
- * here — and its inputs in config — is what lets the review burden be tightened
+ * here - and its inputs in config - is what lets the review burden be tightened
  * or relaxed without touching a step.
  */
 final class GatePolicy
@@ -41,12 +41,12 @@ final class GatePolicy
         $threshold = (float) (config('receipt.gate.min_confidence')[$type->value] ?? 0.0);
 
         // Some warnings describe how the reading went, not what was read. OCR
-        // is a preprocessor here — when the extraction itself came back
+        // is a preprocessor here - when the extraction itself came back
         // confident enough to commit unattended, unreadable OCR text says
         // nothing about the document and must not park the run on its own.
         //
         // A type with no threshold of its own (`unknown`) falls back to 0.0,
-        // which every confidence clears — that proves nothing, so it does not
+        // which every confidence clears - that proves nothing, so it does not
         // count as confident. Waiving must be earned against a real bar,
         // least of all on a document we could not even classify.
         $isConfident = $confidence !== null && $threshold > 0.0 && $confidence >= $threshold;
@@ -63,7 +63,7 @@ final class GatePolicy
                 continue;
             }
 
-            // Config is authoritative — a step's proposed severity is a hint.
+            // Config is authoritative - a step's proposed severity is a hint.
             // An unknown code defaults to `warning`: something new happened and
             // that is precisely when a human should look.
             $severity = FindingSeverity::tryFrom($severities[$code] ?? 'warning') ?? FindingSeverity::Warning;

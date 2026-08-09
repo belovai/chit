@@ -13,7 +13,7 @@ use Modules\Receipt\Services\ArtifactCodec;
 /**
  * Normalising merchant names is a first-class concern: "OMV Hodmezovasarhely 2"
  * and "OMV Hmvhely" must resolve to one merchant or every later query fragments.
- * This step proposes, it never creates — a new merchant row is only written on
+ * This step proposes, it never creates - a new merchant row is only written on
  * approval, in create_transaction.
  */
 final class MatchMerchantStep implements PipelineStep

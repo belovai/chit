@@ -31,7 +31,7 @@ final class ClassificationPrompt
     {
         $hintLine = $hint === null || $hint === DocumentType::Unknown
             ? ''
-            : "The person who uploaded it said this is a `{$hint->value}`. Treat that as a strong prior, but report what the text actually shows — if it contradicts them, say so and lower your confidence.\n\n";
+            : "The person who uploaded it said this is a `{$hint->value}`. Treat that as a strong prior, but report what the text actually shows - if it contradicts them, say so and lower your confidence.\n\n";
 
         return $hintLine."OCR text:\n\n<document>\n{$ocrText}\n</document>";
     }

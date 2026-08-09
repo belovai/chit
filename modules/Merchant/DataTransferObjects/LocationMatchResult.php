@@ -6,7 +6,7 @@ namespace Modules\Merchant\DataTransferObjects;
 
 /**
  * The outcome of matching a printed address against one merchant's branches.
- * `all()` is the reviewer's picker — every branch, whether or not it looks like
+ * `all()` is the reviewer's picker - every branch, whether or not it looks like
  * the printed one. `candidates()` is the narrower set worth naming in an
  * artifact or a finding.
  */

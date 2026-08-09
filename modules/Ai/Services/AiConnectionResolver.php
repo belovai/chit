@@ -52,7 +52,7 @@ final class AiConnectionResolver
 
     /**
      * Resolves a snapshotted credential id inside a worker. The key is read and
-     * decrypted here, at execution time — it is never carried in a job payload.
+     * decrypted here, at execution time - it is never carried in a job payload.
      */
     public function forCredentialId(int $credentialId): AiConnection
     {

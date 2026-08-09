@@ -19,7 +19,7 @@ use Modules\Ai\ValueObjects\VerificationResult;
 
 /**
  * Ships in the module rather than in Tests/ so other modules can bind it
- * without depending on this module's test autoload — the same reason
+ * without depending on this module's test autoload - the same reason
  * FakeDocumentAi lives in Modules\Extraction\Ai\Testing.
  */
 final class FakeAiProvider implements AiProvider

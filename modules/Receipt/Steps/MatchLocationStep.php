@@ -13,7 +13,7 @@ use Modules\Pipeline\ValueObjects\StepResult;
 use Modules\Receipt\Services\ArtifactCodec;
 
 /**
- * A branch is matched on its address, not on the merchant's name — the old
+ * A branch is matched on its address, not on the merchant's name - the old
  * implementation compared the two, which could never hit. A miss is worth
  * asking about (it creates a location row), but a receipt that names no branch
  * at all is unremarkable and stays silent.

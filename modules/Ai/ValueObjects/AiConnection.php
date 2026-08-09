@@ -6,7 +6,7 @@ namespace Modules\Ai\ValueObjects;
 
 /**
  * A resolved credential, ready to call with. Constructed only by
- * AiConnectionResolver — never assembled by hand outside the Ai module.
+ * AiConnectionResolver - never assembled by hand outside the Ai module.
  *
  * Holds a plaintext API key. Never log it, never serialise it into a queue
  * payload, never put it in an exception message.

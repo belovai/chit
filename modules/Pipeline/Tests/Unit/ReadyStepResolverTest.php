@@ -76,7 +76,7 @@ final class ReadyStepResolverTest extends TestCase
     {
         $plan = $this->resolver->resolve([
             $this->snapshot(1, 'a', 0, StepStatus::Running),
-            // no depends_on at all — the implicit stage gate must still hold it
+            // no depends_on at all - the implicit stage gate must still hold it
             $this->snapshot(2, 'gate', 1, StepStatus::Pending),
         ]);
 

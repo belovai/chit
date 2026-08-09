@@ -39,12 +39,12 @@ return [
 
         // Codes that describe how the reading went rather than what was read.
         // Once the extraction clears `min_confidence` for its type, these say
-        // nothing about the document and are dropped before counting — without
+        // nothing about the document and are dropped before counting - without
         // this, an unreadable OCR pass parks a run the model read perfectly,
         // and the review screen then has no field to ask about.
         'waived_when_confident' => ['low_ocr_confidence'],
 
-        // Start strict. Raise this as trust in the extraction grows — at 0 a
+        // Start strict. Raise this as trust in the extraction grows - at 0 a
         // single warning stops the run, which is what you want on day one.
         'max_warnings' => env('RECEIPT_GATE_MAX_WARNINGS', 0),
     ],
@@ -71,7 +71,7 @@ return [
 
     'validation' => [
         // Items may miss the printed total by this much (minor units) before it
-        // counts as a mismatch — rounding and unpriced deposits are normal.
+        // counts as a mismatch - rounding and unpriced deposits are normal.
         'sum_tolerance_minor' => env('RECEIPT_SUM_TOLERANCE_MINOR', 200),
     ],
 ];
