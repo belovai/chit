@@ -9,9 +9,9 @@ use Modules\Ai\Enums\CredentialStatus;
 use Modules\Ai\Models\AiCredential;
 use Modules\Ai\Registries\ProviderRegistry;
 
-final class UpdateAiCredential
+final readonly class UpdateAiCredential
 {
-    public function __construct(private readonly ProviderRegistry $providers) {}
+    public function __construct(private ProviderRegistry $providers) {}
 
     /**
      * @param  array<string, mixed>  $data

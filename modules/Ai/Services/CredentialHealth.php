@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Ai\Services;
 
 use Modules\Ai\Enums\CredentialStatus;
+use Modules\Ai\Enums\FailureKind;
 use Modules\Ai\Events\AiCredentialDisabled;
+use Modules\Ai\Events\AiCredentialSuspended;
 use Modules\Ai\Models\AiCredential;
 
 /**
@@ -24,7 +26,7 @@ final class CredentialHealth
         ]);
     }
 
-    public function failed(int $credentialId, string $error, bool $isAuthFailure): void
+    public function failed(int $credentialId, string $error, FailureKind $kind): void
     {
         $credential = AiCredential::query()->find($credentialId);
 
@@ -32,13 +34,34 @@ final class CredentialHealth
             return;
         }
 
-        if (!$isAuthFailure) {
+        match ($kind) {
             // Rate limits and outages say nothing about the key's validity.
-            $credential->update(['last_error' => $error]);
+            FailureKind::Transient, FailureKind::Permanent => $credential->update(['last_error' => $error]),
+            FailureKind::Unusable => $this->suspend($credential, $error),
+            FailureKind::AuthFailure => $this->countAuthFailure($credential, $error),
+        };
+    }
 
-            return;
+    /**
+     * Held out of use without a mark against it: failure_count and is_active
+     * are left alone, so topping up and verifying is the whole way back.
+     */
+    private function suspend(AiCredential $credential, string $error): void
+    {
+        $alreadySuspended = $credential->status === CredentialStatus::Suspended;
+
+        $credential->update([
+            'status' => CredentialStatus::Suspended,
+            'last_error' => $error,
+        ]);
+
+        if (!$alreadySuspended) {
+            AiCredentialSuspended::dispatch($credential->id, $credential->owner_id, $error);
         }
+    }
 
+    private function countAuthFailure(AiCredential $credential, string $error): void
+    {
         $failures = $credential->failure_count + 1;
         $threshold = (int) config('ai.auth_failure_threshold', 3);
         $disabled = $failures >= $threshold;

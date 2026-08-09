@@ -33,6 +33,8 @@ final class FakeAiProvider implements AiProvider
 
     private static ?string $verificationError = null;
 
+    private static bool $verificationUnusable = false;
+
     /** @var list<AiRequest> */
     private static array $calls = [];
 
@@ -58,6 +60,13 @@ final class FakeAiProvider implements AiProvider
         self::$verificationError = $message;
     }
 
+    /** Verification fails because the account cannot serve, not because the key is bad. */
+    public static function willReportUnusableOnVerification(string $message): void
+    {
+        self::$verificationError = $message;
+        self::$verificationUnusable = true;
+    }
+
     /**
      * @return list<AiRequest>
      */
@@ -80,6 +89,9 @@ final class FakeAiProvider implements AiProvider
         self::$connections[] = $connection;
     }
 
+    /**
+     * @throws \JsonException
+     */
     public static function nextResponse(): AiResponse
     {
         if (self::$failure !== null) {
@@ -102,20 +114,24 @@ final class FakeAiProvider implements AiProvider
         self::$usage = null;
         self::$failure = null;
         self::$verificationError = null;
+        self::$verificationUnusable = false;
         self::$calls = [];
         self::$connections = [];
     }
 
+    #[\Override]
     public function id(): string
     {
         return 'fake';
     }
 
+    #[\Override]
     public function label(): string
     {
         return 'Fake provider';
     }
 
+    #[\Override]
     public function models(): array
     {
         return [
@@ -134,17 +150,13 @@ final class FakeAiProvider implements AiProvider
         ];
     }
 
+    #[\Override]
     public function model(string $id): ?ModelDescriptor
     {
-        foreach ($this->models() as $model) {
-            if ($model->id === $id) {
-                return $model;
-            }
-        }
-
-        return null;
+        return array_find($this->models(), fn ($model) => $model->id === $id);
     }
 
+    #[\Override]
     public function settingsSchema(): array
     {
         return [
@@ -153,10 +165,13 @@ final class FakeAiProvider implements AiProvider
         ];
     }
 
+    #[\Override]
     public function verify(string $apiKey, string $model): VerificationResult
     {
         if (self::$verificationError !== null) {
-            return VerificationResult::failed(self::$verificationError);
+            return self::$verificationUnusable
+                ? VerificationResult::unusable(self::$verificationError)
+                : VerificationResult::failed(self::$verificationError);
         }
 
         return $this->model($model) !== null
@@ -164,6 +179,7 @@ final class FakeAiProvider implements AiProvider
             : VerificationResult::failed('Unknown model ['.$model.'].');
     }
 
+    #[\Override]
     public function client(AiConnection $connection): AiClient
     {
         return new FakeAiClient($connection);

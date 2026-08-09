@@ -13,6 +13,8 @@ final class ActivateAiCredential
      * Clearing the old row and setting the new one happen in one transaction:
      * the partial unique index would otherwise reject the intermediate state
      * where two rows are active.
+     *
+     * @throws \Throwable
      */
     public function handle(AiCredential $credential): AiCredential
     {

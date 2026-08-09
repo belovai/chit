@@ -6,6 +6,8 @@ namespace Modules\Ai\Models;
 
 use App\Traits\UsesHashId;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -83,32 +85,44 @@ use Modules\User\Models\User;
     'last_error',
     'failure_count',
 )]
+// Hides the decrypted key from `toArray()`, so it cannot leak through a
+// resource, a log line, or a `dd()` of the model.
+#[Hidden('api_key', 'key_fingerprint')]
 final class AiCredential extends Model
 {
     /** @use HasFactory<AiCredentialFactory> */
     use HasFactory, UsesHashId;
 
     /**
-     * Hides the decrypted key from `toArray()`, so it cannot leak through a
-     * resource, a log line, or a `dd()` of the model.
-     *
-     * @var list<string>
+     * @return array<string, string>
      */
-    protected $hidden = ['api_key', 'key_fingerprint'];
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'api_key' => 'encrypted',
+            'settings' => 'array',
+            'is_active' => 'bool',
+            'status' => CredentialStatus::class,
+            'last_verified_at' => 'datetime',
+            'last_used_at' => 'datetime',
+            'failure_count' => 'integer',
+        ];
+    }
 
-    public static function fingerprint(string $apiKey): string
+    protected static function newFactory(): AiCredentialFactory
+    {
+        return AiCredentialFactory::new();
+    }
+
+    public static function fingerprint(#[\SensitiveParameter] string $apiKey): string
     {
         return hash('sha256', $apiKey);
     }
 
-    public static function lastFour(string $apiKey): string
+    public static function lastFour(#[\SensitiveParameter] string $apiKey): string
     {
         return mb_substr($apiKey, -4);
-    }
-
-    public function maskedKey(): string
-    {
-        return '••••'.$this->key_last_four;
     }
 
     /**
@@ -120,27 +134,6 @@ final class AiCredential extends Model
     }
 
     /**
-     * @param  Builder<$this>  $query
-     */
-    public function scopeActive(Builder $query): void
-    {
-        $query->where('is_active', true);
-    }
-
-    /**
-     * @param  Builder<$this>  $query
-     */
-    public function scopeForUser(Builder $query, int $userId): void
-    {
-        $query->where('owner_id', $userId);
-    }
-
-    protected static function newFactory(): AiCredentialFactory
-    {
-        return AiCredentialFactory::new();
-    }
-
-    /**
      * @return HasMany<AiUsageLog, $this>
      */
     public function usageLogs(): HasMany
@@ -149,18 +142,25 @@ final class AiCredential extends Model
     }
 
     /**
-     * @return array<string, string>
+     * @param  Builder<$this>  $query
      */
-    protected function casts(): array
+    #[Scope]
+    protected function forUser(Builder $query, int $userId): void
     {
-        return [
-            'api_key' => 'encrypted',
-            'settings' => 'array',
-            'is_active' => 'bool',
-            'status' => CredentialStatus::class,
-            'last_verified_at' => 'datetime',
-            'last_used_at' => 'datetime',
-            'failure_count' => 'int',
-        ];
+        $query->where('owner_id', $userId);
+    }
+
+    /**
+     * @param  Builder<$this>  $query
+     */
+    #[Scope]
+    protected function active(Builder $query): void
+    {
+        $query->where('is_active', true);
+    }
+
+    public function maskedKey(): string
+    {
+        return '••••'.$this->key_last_four;
     }
 }

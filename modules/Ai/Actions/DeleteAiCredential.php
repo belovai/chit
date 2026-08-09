@@ -8,13 +8,15 @@ use Illuminate\Support\Facades\DB;
 use Modules\Ai\Enums\CredentialStatus;
 use Modules\Ai\Models\AiCredential;
 
-final class DeleteAiCredential
+final readonly class DeleteAiCredential
 {
-    public function __construct(private readonly ActivateAiCredential $activate) {}
+    public function __construct(private ActivateAiCredential $activate) {}
 
     /**
      * Deleting the active credential would otherwise leave the user with keys
      * on file and no AI, which reads as a bug from their side.
+     *
+     * @throws \Throwable
      */
     public function handle(AiCredential $credential): void
     {

@@ -10,12 +10,12 @@ use Modules\Ai\Support\RecordingAiClient;
 use Modules\Ai\ValueObjects\AiConnection;
 use Modules\Ai\ValueObjects\UsageContext;
 
-final class AiClientFactory
+final readonly class AiClientFactory
 {
     public function __construct(
-        private readonly ProviderRegistry $providers,
-        private readonly UsageRecorder $usage,
-        private readonly CredentialHealth $health,
+        private ProviderRegistry $providers,
+        private UsageRecorder $usage,
+        private CredentialHealth $health,
     ) {}
 
     public function for(AiConnection $connection, ?UsageContext $context = null): AiClient

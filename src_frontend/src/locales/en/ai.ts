@@ -39,6 +39,7 @@ export default {
   statusVerified: 'Verified',
   statusFailing: 'Failing',
   statusDisabled: 'Disabled',
+  statusSuspended: 'Paused at provider',
 
   lastVerifiedAt: 'Verified {date}',
   lastUsedAt: 'Last used {date}',
@@ -49,6 +50,19 @@ export default {
     json_schema: 'json schema',
     prompt_cache: 'prompt cache',
   },
+
+  // Backend validation codes. The bounds and options are not interpolated:
+  // the form already renders them from the provider's settings schema.
+  duplicate_key: 'This API key is already stored for this provider.',
+  model_not_available: 'The selected model is not available for this provider.',
+  settings_not_an_object: 'Model settings could not be read.',
+  setting_required: 'This setting is required.',
+  setting_unknown: 'This provider has no such setting.',
+  setting_not_an_integer: 'Enter a whole number.',
+  setting_below_min: 'Value is below the allowed minimum.',
+  setting_above_max: 'Value is above the allowed maximum.',
+  setting_not_an_option: 'Choose one of the listed options.',
+  setting_not_a_boolean: 'Value must be on or off.',
 
   settings: {
     max_tokens: {

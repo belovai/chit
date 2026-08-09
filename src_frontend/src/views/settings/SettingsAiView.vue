@@ -72,7 +72,9 @@ export default defineComponent({
 
     statusVariant(status: AiCredentialStatus): 'neutral' | 'success' | 'warning' | 'danger' {
       if (status === 'verified') return 'success'
-      if (status === 'failing') return 'warning'
+      // Suspended is a warning, not a danger: the key is fine, the provider
+      // account is not.
+      if (status === 'failing' || status === 'suspended') return 'warning'
       if (status === 'disabled') return 'danger'
       return 'neutral'
     },
@@ -83,6 +85,7 @@ export default defineComponent({
         verified: 'ai.statusVerified',
         failing: 'ai.statusFailing',
         disabled: 'ai.statusDisabled',
+        suspended: 'ai.statusSuspended',
       }
       return this.t(keys[status])
     },

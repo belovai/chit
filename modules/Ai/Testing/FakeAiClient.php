@@ -9,10 +9,14 @@ use Modules\Ai\ValueObjects\AiConnection;
 use Modules\Ai\ValueObjects\AiRequest;
 use Modules\Ai\ValueObjects\AiResponse;
 
-final class FakeAiClient implements AiClient
+final readonly class FakeAiClient implements AiClient
 {
-    public function __construct(private readonly AiConnection $connection) {}
+    public function __construct(private AiConnection $connection) {}
 
+    /**
+     * @throws \JsonException
+     */
+    #[\Override]
     public function complete(AiRequest $request): AiResponse
     {
         FakeAiProvider::record($request, $this->connection);

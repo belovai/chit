@@ -21,6 +21,7 @@ final class UpdateAiCredentialRequest extends FormRequest
     /**
      * @return array<string, string>
      */
+    #[\Override]
     public function messages(): array
     {
         return $this->codedValidationMessages();

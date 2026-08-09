@@ -45,31 +45,32 @@ final readonly class SettingField
     }
 
     /**
-     * @return string|null an error message, or null when the value is acceptable
+     * The bounds and options themselves are not in the code: the client already
+     * has them from settingsSchema(), which is what renders the input.
+     *
+     * @return string|null a machine error code, or null when the value is acceptable
      */
     public function validate(mixed $value): ?string
     {
         return match ($this->type) {
             SettingType::Int_ => $this->validateInt($value),
-            SettingType::Enum_ => in_array($value, $this->options, true)
-                ? null
-                : $this->key.' must be one of: '.implode(', ', $this->options).'.',
-            SettingType::Bool_ => is_bool($value) ? null : $this->key.' must be a boolean.',
+            SettingType::Enum_ => in_array($value, $this->options, true) ? null : 'ai.setting_not_an_option',
+            SettingType::Bool_ => is_bool($value) ? null : 'ai.setting_not_a_boolean',
         };
     }
 
     private function validateInt(mixed $value): ?string
     {
         if (!is_int($value)) {
-            return $this->key.' must be an integer.';
+            return 'ai.setting_not_an_integer';
         }
 
         if ($this->min !== null && $value < $this->min) {
-            return $this->key.' must be at least '.$this->min.'.';
+            return 'ai.setting_below_min';
         }
 
         if ($this->max !== null && $value > $this->max) {
-            return $this->key.' must be at most '.$this->max.'.';
+            return 'ai.setting_above_max';
         }
 
         return null;

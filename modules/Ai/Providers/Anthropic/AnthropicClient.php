@@ -9,6 +9,7 @@ use Anthropic\Core\Exceptions\APIConnectionException;
 use Anthropic\Core\Exceptions\APIStatusException;
 use Anthropic\Core\Exceptions\InternalServerException;
 use Anthropic\Core\Exceptions\RateLimitException;
+use Anthropic\ErrorType;
 use Anthropic\Messages\OutputConfig\Effort;
 use Anthropic\Messages\TextBlock;
 use Modules\Ai\Contracts\AiClient;
@@ -29,14 +30,15 @@ use Throwable;
  * (`outputConfig.format`), the usage field names, and the exception →
  * retryable mapping.
  */
-class AnthropicClient implements AiClient
+final readonly class AnthropicClient implements AiClient
 {
     public function __construct(
-        private readonly AiConnection $connection,
-        private readonly CostCalculator $costs,
-        private readonly AnthropicProvider $provider,
+        private AiConnection $connection,
+        private CostCalculator $costs,
+        private AnthropicProvider $provider,
     ) {}
 
+    #[\Override]
     public function complete(AiRequest $request): AiResponse
     {
         $this->assertUsable($request);
@@ -63,10 +65,17 @@ class AnthropicClient implements AiClient
         } catch (RateLimitException|InternalServerException|APIConnectionException $exception) {
             throw AiException::retryable($exception->getMessage(), $exception);
         } catch (APIStatusException $exception) {
-            // 4xx other than 429 — bad request, auth, permissions. Retrying cannot help.
-            $errorType = $exception->type !== null ? $exception->type->value : 'api_error';
+            // 4xx other than 429 - bad request, auth, permissions. Retrying cannot help.
+            $errorType = $exception->type ?? ErrorType::API_ERROR;
+            $message = $errorType->value.': '.$exception->getMessage();
 
-            throw AiException::permanent($errorType.': '.$exception->getMessage(), $exception);
+            // Only this adapter knows what its vendor's error types say about
+            // the credential; AiException carries the answer, not the string.
+            throw match ($errorType) {
+                ErrorType::AUTHENTICATION_ERROR, ErrorType::PERMISSION_ERROR => AiException::authFailure($message, $exception),
+                ErrorType::BILLING_ERROR => AiException::unusable($message, $exception),
+                default => AiException::permanent($message, $exception),
+            };
         } catch (Throwable $exception) {
             throw AiException::permanent($exception->getMessage(), $exception);
         }

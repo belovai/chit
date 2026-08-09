@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Ai\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,22 +33,22 @@ use Modules\User\Models\User;
  * @property-read Model|null $subject
  *
  * @method static \Modules\Ai\Database\Factories\AiUsageLogFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereAiCredentialId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereCachedInputTokens($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereCostUsdMicros($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereInputTokens($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereModel($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereOutputTokens($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereOwnerId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereProvider($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog wherePurpose($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereSubjectId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|AiUsageLog whereSubjectType($value)
+ * @method static Builder<static>|AiUsageLog newModelQuery()
+ * @method static Builder<static>|AiUsageLog newQuery()
+ * @method static Builder<static>|AiUsageLog query()
+ * @method static Builder<static>|AiUsageLog whereAiCredentialId($value)
+ * @method static Builder<static>|AiUsageLog whereCachedInputTokens($value)
+ * @method static Builder<static>|AiUsageLog whereCostUsdMicros($value)
+ * @method static Builder<static>|AiUsageLog whereCreatedAt($value)
+ * @method static Builder<static>|AiUsageLog whereId($value)
+ * @method static Builder<static>|AiUsageLog whereInputTokens($value)
+ * @method static Builder<static>|AiUsageLog whereModel($value)
+ * @method static Builder<static>|AiUsageLog whereOutputTokens($value)
+ * @method static Builder<static>|AiUsageLog whereOwnerId($value)
+ * @method static Builder<static>|AiUsageLog whereProvider($value)
+ * @method static Builder<static>|AiUsageLog wherePurpose($value)
+ * @method static Builder<static>|AiUsageLog whereSubjectId($value)
+ * @method static Builder<static>|AiUsageLog whereSubjectType($value)
  *
  * @mixin \Eloquent
  */
@@ -74,6 +75,20 @@ final class AiUsageLog extends Model
     use HasFactory;
 
     public const UPDATED_AT = null;
+
+    /**
+     * @return array<string, string>
+     */
+    #[\Override]
+    protected function casts(): array
+    {
+        return [
+            'input_tokens' => 'integer',
+            'output_tokens' => 'integer',
+            'cached_input_tokens' => 'integer',
+            'cost_usd_micros' => 'integer',
+        ];
+    }
 
     protected static function newFactory(): AiUsageLogFactory
     {

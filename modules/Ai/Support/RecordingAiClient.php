@@ -17,16 +17,17 @@ use Modules\Ai\ValueObjects\UsageContext;
  * Usage logging and health bookkeeping wrap every vendor client, so a new
  * adapter inherits both without writing a line of either.
  */
-final class RecordingAiClient implements AiClient
+final readonly class RecordingAiClient implements AiClient
 {
     public function __construct(
-        private readonly AiClient $inner,
-        private readonly AiConnection $connection,
-        private readonly UsageContext $context,
-        private readonly UsageRecorder $usage,
-        private readonly CredentialHealth $health,
+        private AiClient $inner,
+        private AiConnection $connection,
+        private UsageContext $context,
+        private UsageRecorder $usage,
+        private CredentialHealth $health,
     ) {}
 
+    #[\Override]
     public function complete(AiRequest $request): AiResponse
     {
         try {
@@ -36,7 +37,7 @@ final class RecordingAiClient implements AiClient
                 $this->health->failed(
                     $this->connection->credentialId,
                     $exception->getMessage(),
-                    $exception->isAuthFailure(),
+                    $exception->kind(),
                 );
             }
 

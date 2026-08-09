@@ -33,9 +33,9 @@ final class DescriptorTest extends TestCase
         $field = SettingField::int('max_tokens', default: 8000, min: 1, max: 64000);
 
         $this->assertNull($field->validate(8000));
-        $this->assertSame('max_tokens must be at most 64000.', $field->validate(70000));
-        $this->assertSame('max_tokens must be at least 1.', $field->validate(0));
-        $this->assertSame('max_tokens must be an integer.', $field->validate('lots'));
+        $this->assertSame('ai.setting_above_max', $field->validate(70000));
+        $this->assertSame('ai.setting_below_min', $field->validate(0));
+        $this->assertSame('ai.setting_not_an_integer', $field->validate('lots'));
     }
 
     #[Test]
@@ -44,7 +44,7 @@ final class DescriptorTest extends TestCase
         $field = SettingField::enum('effort', default: 'low', options: ['low', 'high']);
 
         $this->assertNull($field->validate('high'));
-        $this->assertSame('effort must be one of: low, high.', $field->validate('extreme'));
+        $this->assertSame('ai.setting_not_an_option', $field->validate('extreme'));
     }
 
     #[Test]
@@ -53,6 +53,6 @@ final class DescriptorTest extends TestCase
         $field = SettingField::bool('stream', default: false);
 
         $this->assertNull($field->validate(true));
-        $this->assertSame('stream must be a boolean.', $field->validate('yes'));
+        $this->assertSame('ai.setting_not_a_boolean', $field->validate('yes'));
     }
 }
