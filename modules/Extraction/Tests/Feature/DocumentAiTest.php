@@ -97,7 +97,7 @@ final class DocumentAiTest extends TestCase
         app(DocumentAi::class)->extract($this->connection(), 'bytes', 'image/png', DocumentType::Unknown);
     }
 
-    /** Carried over from AnthropicDocumentAiTest — the schema shape is domain, not transport. */
+    /** Carried over from AnthropicDocumentAiTest - the schema shape is domain, not transport. */
     #[Test]
     public function classification_sends_the_classification_schema_and_the_ocr_text(): void
     {

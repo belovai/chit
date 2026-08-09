@@ -65,7 +65,7 @@ final class CredentialIsolationTest extends TestCase
     public function usage_is_attributed_to_the_user_who_paid_for_it(): void
     {
         // The real DocumentAi path (not FakeDocumentAi) is what actually
-        // records usage — it is the one that goes through AiClientFactory.
+        // records usage - it is the one that goes through AiClientFactory.
         config()->set('extraction.ai.fake_documents', false);
         FakeAiProvider::reset();
         FakeAiProvider::willRespond([

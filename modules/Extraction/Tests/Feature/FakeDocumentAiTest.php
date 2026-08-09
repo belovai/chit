@@ -75,7 +75,7 @@ final class FakeDocumentAiTest extends TestCase
             $this->assertTrue($exception->isRetryable());
         }
 
-        // The second call succeeds — priming is one-shot.
+        // The second call succeeds - priming is one-shot.
         $this->assertSame(
             DocumentType::Receipt,
             app(DocumentClassifier::class)->classify($this->connection(), 'anything')->type,

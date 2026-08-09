@@ -10,7 +10,7 @@ enum DocumentType: string
     case UtilityBill = 'utility_bill';
     case Unknown = 'unknown';
 
-    /** Model output is untrusted — an unrecognised value must not throw. */
+    /** Model output is untrusted - an unrecognised value must not throw. */
     public static function parse(?string $value): self
     {
         return self::tryFrom((string) $value) ?? self::Unknown;

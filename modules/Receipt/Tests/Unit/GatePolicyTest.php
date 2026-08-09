@@ -15,7 +15,7 @@ final class GatePolicyTest extends TestCase
     private function findings(string ...$codes): array
     {
         return array_map(
-            // The severity a step proposes is deliberately wrong here — the
+            // The severity a step proposes is deliberately wrong here - the
             // policy must take its severity from config, not from the finding.
             static fn (string $code): array => ['code' => $code, 'severity' => 'info', 'message' => null, 'context' => []],
             $codes,

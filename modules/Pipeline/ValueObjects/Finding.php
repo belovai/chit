@@ -8,7 +8,7 @@ use Modules\Pipeline\Enums\FindingSeverity;
 
 /**
  * A structured observation a step makes about its input or output.
- * A finding is NOT a failure — a step may succeed while emitting blockers.
+ * A finding is NOT a failure - a step may succeed while emitting blockers.
  * The gate step, not the emitting step, decides what a finding means.
  */
 final readonly class Finding

@@ -9,7 +9,7 @@ return [
     ],
 
     // How long binary artifacts survive after the run reaches a terminal state.
-    // Structured artifacts (json/text) are never pruned — they are the audit trail.
+    // Structured artifacts (json/text) are never pruned - they are the audit trail.
     'artifact_retention_days' => env('PIPELINE_ARTIFACT_RETENTION_DAYS', 30),
 
     'retry' => [

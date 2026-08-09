@@ -146,7 +146,7 @@ final class FakeDocumentAi implements DocumentClassifier, DocumentExtractor
             confidence: self::$extractConfidence,
             usage: new AiUsage(inputTokens: 4000, outputTokens: 400, costUsdMicros: 30000),
             // Mirrors the real provider, where `document` is parsed from this
-            // same payload via DocumentMapper — downstream steps read the
+            // same payload via DocumentMapper - downstream steps read the
             // artifact's raw payload, not the VO, so the two must agree here too.
             rawResponse: $document instanceof ExtractedReceipt
                 ? self::receiptToRawResponse($document)

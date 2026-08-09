@@ -49,7 +49,7 @@ final class ReceiptModuleServiceProvider extends ServiceProvider
 
         Event::listen(RunStatusChanged::class, ProjectReceiptStatus::class);
         Event::listen(ArtifactPublished::class, ProjectReceiptFields::class);
-        // A run's own `created` model event, not a Pipeline-module event — this
+        // A run's own `created` model event, not a Pipeline-module event - this
         // stays entirely inside the Receipt module and keeps the Pipeline
         // module unaware that Receipt exists.
         Event::listen('eloquent.created: '.PipelineRun::class, ProjectReceiptCurrentRun::class);

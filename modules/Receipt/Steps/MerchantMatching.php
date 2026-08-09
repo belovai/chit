@@ -57,7 +57,7 @@ final class MerchantMatching
         }
 
         if ($acceptedId === null) {
-            // Not an error — it is how a merchant gets into the system. The
+            // Not an error - it is how a merchant gets into the system. The
             // second receipt from this shop will match and pass silently.
             return $result->finding(Finding::warning('new_merchant', context: ['raw_name' => $rawName]));
         }

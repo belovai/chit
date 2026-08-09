@@ -17,7 +17,7 @@ final class DeleteAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            // Irreversible operation, so we confirm with a password — the
+            // Irreversible operation, so we confirm with a password - the
             // guard is given explicitly because we come in with a Bearer token.
             'current_password' => ['required', 'string', 'current_password:sanctum'],
         ];

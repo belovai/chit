@@ -11,7 +11,7 @@ use Modules\Ai\Resources\AiProviderResource;
 
 /**
  * The catalogue that drives the client's provider/model form. Identical for
- * every user, but authenticated — it is not public information.
+ * every user, but authenticated - it is not public information.
  */
 final class AiProviderController
 {

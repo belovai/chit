@@ -8,7 +8,7 @@ trait HasCodedValidationMessages
 {
     /**
      * Maps Laravel's default validation rule names to stable machine codes.
-     * The frontend resolves these to translated, field-aware text — the
+     * The frontend resolves these to translated, field-aware text - the
      * backend never sends translated prose.
      *
      * @return array<string, string>

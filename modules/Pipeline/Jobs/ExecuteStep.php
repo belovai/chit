@@ -60,7 +60,7 @@ final class ExecuteStep implements ShouldQueue
             try {
                 $expander->expand($step, $result->expansions());
             } catch (InvalidExpansionException $exception) {
-                // The expanding step's own definition is wrong — fail that step.
+                // The expanding step's own definition is wrong - fail that step.
                 $result = StepResult::failure($exception);
             }
         }

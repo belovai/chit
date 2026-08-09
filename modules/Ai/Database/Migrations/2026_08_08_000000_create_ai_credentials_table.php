@@ -20,7 +20,7 @@ return new class extends Migration
             // Laravel `encrypted` cast. Ciphertext is far longer than the key.
             $table->text('api_key');
             $table->string('key_last_four', 4);
-            // sha256 of the raw key: not reversible, but searchable — which the
+            // sha256 of the raw key: not reversible, but searchable - which the
             // encrypted column is not. This is what makes duplicate detection possible.
             $table->string('key_fingerprint', 64);
             $table->string('model', 64);

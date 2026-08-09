@@ -16,7 +16,7 @@ final class UpdateAccount
         $attributes = $validated;
 
         // There's no email verification flow yet, but the prior verification
-        // doesn't apply to the new address — null beats a false "verified" state.
+        // doesn't apply to the new address - null beats a false "verified" state.
         if (isset($validated['email']) && $validated['email'] !== $user->email) {
             $attributes['email_verified_at'] = null;
         }

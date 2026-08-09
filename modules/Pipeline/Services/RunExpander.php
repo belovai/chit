@@ -13,7 +13,7 @@ use Modules\Pipeline\ValueObjects\StepDefinition;
 
 /**
  * Inserts steps into a live run. Validates everything before writing anything,
- * so a bad expansion never half-applies — it fails the step that requested it.
+ * so a bad expansion never half-applies - it fails the step that requested it.
  */
 final class RunExpander
 {

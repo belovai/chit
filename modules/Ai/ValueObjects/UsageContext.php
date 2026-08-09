@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Ai\ValueObjects;
 
 /**
- * Why a call was made, for the usage log. Carries no domain types — the
+ * Why a call was made, for the usage log. Carries no domain types - the
  * subject arrives already reduced to a morph pair.
  */
 final readonly class UsageContext

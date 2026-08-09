@@ -41,7 +41,7 @@ final class DemoPipeline extends PipelineDefinition
                 ->dependsOn('demo_ingest')->allowFailure(),
             StepDefinition::make(DemoClassifyStep::class)->inStage('classify')
                 ->dependsOn('demo_read'),
-            // `extract` starts empty — demo_classify fills it.
+            // `extract` starts empty - demo_classify fills it.
             StepDefinition::make(DemoGateStep::class)->inStage('review')->asGate(),
             StepDefinition::make(DemoCommitStep::class)->inStage('commit')
                 ->dependsOn('demo_gate'),

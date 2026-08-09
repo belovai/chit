@@ -170,7 +170,7 @@ final class PipelineEndToEndTest extends TestCase
             occurredAt: CarbonImmutable::parse('2026-07-30 14:12'),
             currency: 'HUF',
             totalMinor: 112700,
-            // One deduction too many was read off the picture — the reviewer
+            // One deduction too many was read off the picture - the reviewer
             // corrects the discount, not the printed total.
             discountMinor: 20000,
             paymentMethod: 'card',
@@ -242,7 +242,7 @@ final class PipelineEndToEndTest extends TestCase
             discountMinor: null,
             paymentMethod: 'card',
             // The model occasionally misfiles a discount as a negative line
-            // instead of `discountMinor` — it must never be matched against
+            // instead of `discountMinor` - it must never be matched against
             // products or spawn a new one.
             items: [new ExtractedLineItem('MaxxMotion Diesel', 1.0, 'l', 668900, 668900),
                 new ExtractedLineItem('Promocio -10Ft/L', 1.0, 'l', -10000, -10000)],
@@ -340,7 +340,7 @@ final class PipelineEndToEndTest extends TestCase
         $this->assertSame(1, Merchant::query()->count());
         $this->assertSame(1, MerchantLocation::query()->count());
 
-        // Second run: same shop, same branch, but a different purchase — same
+        // Second run: same shop, same branch, but a different purchase - same
         // date/total as the first would be dedupe_content's job to catch, not
         // this test's.
         FakeDocumentAi::willExtract(new ExtractedReceipt(
@@ -381,7 +381,7 @@ final class PipelineEndToEndTest extends TestCase
         $receipt = $this->uploadAndRun($user);
         $this->assertSame('needs_review', $receipt->refresh()->status->value);
 
-        // The reviewer changes nothing — the extracted address is all we have,
+        // The reviewer changes nothing - the extracted address is all we have,
         // and it must still become the transaction's branch.
         app(ReviewReceipt::class)->approve($receipt->refresh(), []);
 
@@ -411,7 +411,7 @@ final class PipelineEndToEndTest extends TestCase
 
         $receipt = $this->uploadAndRun($user);
 
-        // The reviewer says this is MOL, not the OMV printed on it — so OMV's
+        // The reviewer says this is MOL, not the OMV printed on it - so OMV's
         // address must not become a MOL branch behind their back.
         app(ReviewReceipt::class)->approve($receipt->refresh(), ['merchant_id' => $picked->id]);
 
@@ -457,7 +457,7 @@ final class PipelineEndToEndTest extends TestCase
         $picked = Merchant::factory()->for($user, 'owner')->create(['name' => 'OMV']);
 
         FakeDocumentAi::willExtract(new ExtractedReceipt(
-            // A fuel station prints its operating company, not the brand — the
+            // A fuel station prints its operating company, not the brand - the
             // reviewer corrects the name, and the address on the picture is
             // still the branch they stood in, so the review screen sends it
             // back alongside the new merchant.

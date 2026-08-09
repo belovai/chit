@@ -25,18 +25,18 @@ final class ReceiptPrompt
             - Take one entry per printed line item, in printed order. Do not merge
               lines, do not split one line into several, and do not add a line for
               the total, the VAT summary, or any discount row.
-            - A discount printed as a negative line is not a line item — put it in
+            - A discount printed as a negative line is not a line item - put it in
               discount_minor as a positive number.
             - Deposit/bottle-return lines (BETETDIJ, GONGYOLEG) are line items.
             - A header can span several lines. Split it into two fields:
               merchant_name is the brand alone, taken from the legal company
               name with the company form (KFT., ZRT., BT.) and any branch
-              marker removed — "SPAR MAGYARORSZAG KERESKEDELMI KFT." is "SPAR",
+              marker removed - "SPAR MAGYARORSZAG KERESKEDELMI KFT." is "SPAR",
               "OMV Hodmezovasarhely 2" is "OMV".
             - merchant_address is the branch's own street address: the LAST
               address block in the header. When two addresses are printed, the
               one immediately following the legal company name is the
-              registered office — discard it and keep the other. When only one
+              registered office - discard it and keep the other. When only one
               address is printed, that is the branch.
             - A short, mostly numeric internal store or till code (e.g. "617 SM
               Szeged Szilleri sg") is neither a name nor an address. Ignore it.

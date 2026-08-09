@@ -18,7 +18,7 @@ final class ChangeAccountPasswordRequest extends FormRequest
     {
         return [
             // The `current_password` rule checks the web guard by default, but
-            // here we come in with a Bearer token — hence the explicit sanctum guard.
+            // here we come in with a Bearer token - hence the explicit sanctum guard.
             'current_password' => ['required', 'string', 'current_password:sanctum'],
             'password' => ['required', 'string', 'min:6', 'different:current_password'],
         ];

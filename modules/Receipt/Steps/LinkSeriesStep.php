@@ -16,7 +16,7 @@ use Modules\Receipt\Services\ArtifactCodec;
 
 /**
  * Finds the previous bill in the same series so anomaly_check has something to
- * compare against. Only approved bills count — comparing against an unreviewed
+ * compare against. Only approved bills count - comparing against an unreviewed
  * one would propagate an extraction error into the check meant to catch it.
  */
 final class LinkSeriesStep implements PipelineStep

@@ -13,7 +13,7 @@ use Modules\Receipt\Services\ArtifactCodec;
 
 /**
  * The best OCR-error detector in the system. A dropped digit in a meter reading
- * sails through the arithmetic check — the totals still add up — but it cannot
+ * sails through the arithmetic check - the totals still add up - but it cannot
  * survive a continuity check against the previous bill.
  *
  * Registered with allowFailure: a first bill in a series has nothing to compare

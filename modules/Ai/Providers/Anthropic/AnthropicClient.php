@@ -161,7 +161,7 @@ class AnthropicClient implements AiClient
     }
 
     /**
-     * The content array is polymorphic — a thinking block can precede the text
+     * The content array is polymorphic - a thinking block can precede the text
      * block, so indexing content[0] blindly is a bug even with thinking off.
      *
      * @param  iterable<object>  $content

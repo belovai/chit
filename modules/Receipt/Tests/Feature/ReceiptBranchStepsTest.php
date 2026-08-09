@@ -302,7 +302,7 @@ final class ReceiptBranchStepsTest extends TestCase
         ]);
         $this->seedArtifact($step, 'review_decision', [
             'decision' => 'approve',
-            // Same branch, spelled the other way — must not create a second row.
+            // Same branch, spelled the other way - must not create a second row.
             'values' => ['location_address' => '6723 Szeged Szilleri sgt. 26'],
         ]);
 
@@ -428,7 +428,7 @@ final class ReceiptBranchStepsTest extends TestCase
         $kenyer = $transaction->items()->where('description', 'Kenyer')->firstOrFail();
 
         $this->assertSame($picked->id, $tej->product_id);
-        // Another owner's row is not theirs to reference — the line falls back
+        // Another owner's row is not theirs to reference - the line falls back
         // to creating their own product from the printed description.
         $this->assertNotSame($foreign->id, $kenyer->product_id);
         $this->assertSame($receipt->owner_id, $kenyer->product?->owner_id);
@@ -479,7 +479,7 @@ final class ReceiptBranchStepsTest extends TestCase
         ]);
         $this->seedArtifact($step, 'review_decision', [
             'decision' => 'approve',
-            // Typed with different casing and padding — still the same shop.
+            // Typed with different casing and padding - still the same shop.
             'values' => ['merchant_name' => '  omv  ', 'location_hash_id' => null],
         ]);
 

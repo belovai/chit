@@ -65,7 +65,7 @@ use Modules\User\Models\User;
     'cost_usd_micros',
     // Mass-assignable on purpose: factories go through fill(), so without this
     // a `->create(['created_at' => ...])` is silently dropped and every seeded
-    // row lands on now() — which would make the usage-window tests meaningless.
+    // row lands on now() - which would make the usage-window tests meaningless.
     'created_at',
 )]
 final class AiUsageLog extends Model

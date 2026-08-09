@@ -10,7 +10,7 @@ use Modules\Ai\Registries\ProviderRegistry;
 
 /**
  * The model must exist in the catalogue of the provider being submitted, so
- * the rule needs that provider id — it cannot be expressed as a static `in:`.
+ * the rule needs that provider id - it cannot be expressed as a static `in:`.
  */
 final class ValidProviderModel implements ValidationRule
 {

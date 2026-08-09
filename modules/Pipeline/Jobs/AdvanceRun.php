@@ -24,7 +24,7 @@ use RuntimeException;
 
 /**
  * Re-evaluates the whole run after every step transition and queues whatever
- * became ready. This is deliberately not a Bus::chain — a chain is fixed, and
+ * became ready. This is deliberately not a Bus::chain - a chain is fixed, and
  * the engine must support mid-run expansion, pausing on a gate, and restarting
  * from the middle. Re-evaluation gives all three from one mechanism.
  */
@@ -59,10 +59,10 @@ final class AdvanceRun implements ShouldQueue
         // dispatch from ExecuteStep. Three reasons:
         //  1. On the `sync` driver (tests) ExecuteStep runs INSIDE this call
         //     stack, so the AdvanceRun it dispatches hits our own
-        //     WithoutOverlapping lock and is released — i.e. dropped. Without
+        //     WithoutOverlapping lock and is released - i.e. dropped. Without
         //     this loop a synchronous run would stall after its first step.
         //  2. On a real queue the second iteration finds the steps still
-        //     `queued` and exits at once — one cheap extra pass.
+        //     `queued` and exits at once - one cheap extra pass.
         //  3. It makes the engine self-healing if a follow-up job is ever lost.
         $iterations = 0;
 
@@ -122,13 +122,13 @@ final class AdvanceRun implements ShouldQueue
     /**
      * Retrying a step while the run is parked flips the run to `running`, but
      * the gate holding it is reached by stage order rather than by `depends_on`
-     * — so it is never part of that retry's downstream closure and stays
+     * - so it is never part of that retry's downstream closure and stays
      * `awaiting_manual`. Once the reopened steps settle, the run is parked
      * again and has to say so: left `running`, it is a run nobody can resume,
      * because every resume path (review, manual decision) accepts only
      * `awaiting_manual`.
      *
-     * Only once nothing else is in flight — otherwise the loop's own early
+     * Only once nothing else is in flight - otherwise the loop's own early
      * return on `awaiting_manual` would abandon steps mid-run. Pending steps do
      * not count: this point is only reached when the plan found none of them
      * ready, which means they are the ones waiting behind the gate.

@@ -23,7 +23,7 @@ return new class extends Migration
             $table->timestamp('created_at')->nullable();
 
             // The query this table exists to serve: "what did the user fix on
-            // this merchant's documents before?" — for future few-shot examples.
+            // this merchant's documents before?" - for future few-shot examples.
             $table->index(['owner_id', 'merchant_id', 'doc_type']);
         });
     }

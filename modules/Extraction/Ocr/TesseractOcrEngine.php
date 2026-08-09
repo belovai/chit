@@ -71,7 +71,7 @@ final class TesseractOcrEngine implements OcrEngine
     /**
      * Tesseract does not report confidence on the plain-text path, so ask for
      * TSV and average the per-word confidences. Words with conf = -1 are layout
-     * rows, not recognised text — they must be excluded or the mean is garbage.
+     * rows, not recognised text - they must be excluded or the mean is garbage.
      */
     private function confidenceFrom(string $file): float
     {

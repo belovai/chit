@@ -57,7 +57,7 @@ final class ExtractReceiptStep implements PipelineStep
         }
 
         return StepResult::success()
-            // The verbatim model payload is the artifact — it is both the input
+            // The verbatim model payload is the artifact - it is both the input
             // for downstream steps and the audit record the brief requires.
             ->artifact('extracted_receipt', [
                 'payload' => $extraction->rawResponse,

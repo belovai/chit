@@ -17,7 +17,7 @@ use Modules\User\Models\User;
 
 /**
  * Account deletion is two steps: the request soft-deletes immediately (the
- * user is logged out), and the actual cleanup runs here, in the background —
+ * user is logged out), and the actual cleanup runs here, in the background -
  * with many receipt/artifact files this can take seconds.
  */
 final class PurgeUserData implements ShouldQueue
@@ -51,7 +51,7 @@ final class PurgeUserData implements ShouldQueue
 
         DB::transaction(function () use ($user, $tables): void {
             // The tables also reference each other with RESTRICT, so we can't
-            // trust it all to the `users` cascade — see config/user.purge_tables.
+            // trust it all to the `users` cascade - see config/user.purge_tables.
             foreach ($tables as $table) {
                 DB::table($table)->where('owner_id', $user->id)->delete();
             }

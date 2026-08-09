@@ -22,7 +22,7 @@ final class UtilityBillSchema
             ],
             'properties' => [
                 'provider_name' => ['type' => ['string', 'null'], 'description' => 'The utility company as printed.'],
-                'customer_reference' => ['type' => ['string', 'null'], 'description' => 'Customer/account number (ügyfélszám, szerződéses folyószámla). This is what links a bill to its predecessor — copy it exactly, digits only.'],
+                'customer_reference' => ['type' => ['string', 'null'], 'description' => 'Customer/account number (ügyfélszám, szerződéses folyószámla). This is what links a bill to its predecessor - copy it exactly, digits only.'],
                 'currency' => ['type' => ['string', 'null']],
                 'total_minor' => ['type' => ['integer', 'null'], 'description' => 'Amount payable in MINOR units.'],
                 'issued_at' => ['type' => ['string', 'null'], 'description' => 'Invoice date as YYYY-MM-DD.'],

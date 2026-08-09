@@ -9,7 +9,7 @@ use Modules\Merchant\Models\MerchantLocation;
 
 /**
  * A branch is matched on its address, never on the merchant's name, and always
- * within one merchant — the same street address may legitimately belong to two
+ * within one merchant - the same street address may legitimately belong to two
  * shops in the same mall, and each keeps its own row.
  *
  * Thresholds are arguments rather than config reads: the pipeline's accept

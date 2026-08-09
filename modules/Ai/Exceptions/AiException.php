@@ -14,7 +14,7 @@ final class AiException extends RuntimeException
         parent::__construct($message, 0, $previous);
     }
 
-    /** Rate limits, overloads, 5xx, connection errors — worth another attempt. */
+    /** Rate limits, overloads, 5xx, connection errors - worth another attempt. */
     public static function retryable(string $message, ?Throwable $previous = null): self
     {
         return new self($message, true, $previous);

@@ -9,7 +9,7 @@ use Modules\Pipeline\ValueObjects\Finding;
 use Modules\Pipeline\ValueObjects\StepContext;
 use Modules\Pipeline\ValueObjects\StepResult;
 
-/** Holds unless `auto_pass` config is true — lets tests drive both gate branches. */
+/** Holds unless `auto_pass` config is true - lets tests drive both gate branches. */
 final class FakeGateStep implements PipelineStep
 {
     public static function key(): string

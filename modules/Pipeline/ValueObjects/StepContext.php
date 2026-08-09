@@ -47,7 +47,7 @@ final readonly class StepContext
     }
 
     /**
-     * The credential this run was started with. Opaque here — the Ai module
+     * The credential this run was started with. Opaque here - the Ai module
      * turns it into a usable connection.
      */
     public function aiCredentialId(): ?int

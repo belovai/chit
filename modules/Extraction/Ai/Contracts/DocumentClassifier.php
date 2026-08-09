@@ -10,7 +10,7 @@ use Modules\Extraction\Ai\ValueObjects\ClassificationResult;
 use Modules\Extraction\Enums\DocumentType;
 
 /**
- * Decides what kind of document some OCR text is. Takes text, never an image —
+ * Decides what kind of document some OCR text is. Takes text, never an image -
  * raw images never leave this machine.
  */
 interface DocumentClassifier

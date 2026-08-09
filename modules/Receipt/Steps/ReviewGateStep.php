@@ -15,7 +15,7 @@ use Modules\Receipt\Services\GatePolicy;
 /**
  * Collects every finding the run produced, asks the policy, and either lets the
  * run commit unattended or parks it with a review_request describing exactly
- * what is uncertain — so the review screen asks about those fields and no others.
+ * what is uncertain - so the review screen asks about those fields and no others.
  */
 final class ReviewGateStep implements PipelineStep
 {

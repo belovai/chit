@@ -154,7 +154,7 @@ final class RetryRunTest extends TestCase
 
     /**
      * The gate is reached by stage order, not by `depends_on`, so no downstream
-     * closure ever contains it — a retry from a parked run flips the run to
+     * closure ever contains it - a retry from a parked run flips the run to
      * `running` and leaves the gate open. Once the reopened step settles, the
      * run has to be parked again: `awaiting_manual` is the only status any
      * resume path accepts, so a run left `running` here can never be approved.

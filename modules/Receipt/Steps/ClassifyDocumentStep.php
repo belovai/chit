@@ -20,7 +20,7 @@ use Modules\Receipt\Services\ArtifactCodec;
 
 /**
  * The branch point. One cheap call decides which of two very different
- * extraction paths the run takes, and expands the run accordingly — the same
+ * extraction paths the run takes, and expands the run accordingly - the same
  * mechanism a third document type would use later.
  */
 final class ClassifyDocumentStep implements PipelineStep
@@ -101,7 +101,7 @@ final class ClassifyDocumentStep implements PipelineStep
         }
 
         if ($classification->type === DocumentType::Unknown || $classification->confidence < self::MIN_CONFIDENCE) {
-            // No branch to take — the gate will ask. Expanding on a guess would
+            // No branch to take - the gate will ask. Expanding on a guess would
             // spend an expensive extraction call on the wrong schema.
             return $result->finding(Finding::blocker('classification_uncertain', context: [
                 'detected' => $classification->type->value,
@@ -114,7 +114,7 @@ final class ClassifyDocumentStep implements PipelineStep
 
     /**
      * A second attempt only happens after a human answered the very question
-     * this step failed at, so their answer wins over another guess — and over
+     * this step failed at, so their answer wins over another guess - and over
      * another paid call that has no new evidence to work from.
      */
     private function reviewerDecision(StepContext $context): ?DocumentType

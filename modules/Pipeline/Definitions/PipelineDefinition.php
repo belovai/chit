@@ -14,7 +14,7 @@ abstract class PipelineDefinition
 
     /**
      * Every stage the run may ever contain, in display order. Stages with no
-     * initial steps are still listed — dynamic expansion fills them, and the UI
+     * initial steps are still listed - dynamic expansion fills them, and the UI
      * renders them as empty columns from the first render.
      *
      * @return list<string>

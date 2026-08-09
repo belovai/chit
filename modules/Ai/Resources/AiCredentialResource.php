@@ -14,7 +14,7 @@ use Modules\Ai\Models\AiCredential;
 final class AiCredentialResource extends JsonResource
 {
     /**
-     * The key itself is never present here — only its last four characters.
+     * The key itself is never present here - only its last four characters.
      *
      * @return array<string, mixed>
      */
