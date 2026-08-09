@@ -9,11 +9,13 @@ import nav from './nav'
 import settingsNav from './settingsNav'
 import receipts from './receipts'
 import transactions from './transactions'
+import transaction from './transaction'
 import profile from './profile'
 import notifications from './notifications'
 import merchants from './merchants'
 import merchant from './merchant'
 import products from './products'
+import product from './product'
 import pipeline from './pipeline'
 import ai from './ai'
 
@@ -29,11 +31,13 @@ export default {
   settingsNav,
   receipts,
   transactions,
+  transaction,
   profile,
   notifications,
   merchants,
   merchant,
   products,
+  product,
   pipeline,
   ai,
 }

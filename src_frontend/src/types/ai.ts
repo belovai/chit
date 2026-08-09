@@ -1,5 +1,5 @@
 export type AiCapability = 'vision' | 'json_schema' | 'prompt_cache'
-export type AiCredentialStatus = 'pending' | 'verified' | 'failing' | 'disabled'
+export type AiCredentialStatus = 'pending' | 'verified' | 'failing' | 'disabled' | 'suspended'
 export type AiSettingType = 'int' | 'enum' | 'bool'
 
 export interface AiModelPricing {

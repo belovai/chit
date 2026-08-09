@@ -20,6 +20,6 @@ final readonly class ModelDescriptor
 
     public function supports(Capability $capability): bool
     {
-        return in_array($capability, $this->capabilities, true);
+        return $capability->in($this->capabilities);
     }
 }

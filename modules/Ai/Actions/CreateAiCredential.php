@@ -10,15 +10,17 @@ use Modules\Ai\Enums\CredentialStatus;
 use Modules\Ai\Models\AiCredential;
 use Modules\Ai\Registries\ProviderRegistry;
 
-final class CreateAiCredential
+final readonly class CreateAiCredential
 {
     public function __construct(
-        private readonly ProviderRegistry $providers,
-        private readonly ActivateAiCredential $activate,
+        private ProviderRegistry $providers,
+        private ActivateAiCredential $activate,
     ) {}
 
     /**
      * @param  array{provider: string, label: string, api_key: string, model: string, settings: array<string, mixed>}  $data
+     *
+     * @throws \Throwable
      */
     public function handle(int $userId, array $data): AiCredential
     {

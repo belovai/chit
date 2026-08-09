@@ -6,6 +6,8 @@ namespace Modules\Receipt\Models;
 
 use App\Traits\UsesHashId;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -46,30 +48,31 @@ use Modules\User\Models\User;
  * @property-read Transaction|null $transaction
  *
  * @method static \Modules\Receipt\Database\Factories\ReceiptFactory factory($count = null, $state = [])
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt newModelQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt newQuery()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt onlyTrashed()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt query()
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereCreatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereCurrentRunId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereDeletedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereDisk($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereDocType($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereDocTypeHint($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereFileHash($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereHashId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereMime($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereOriginalFilename($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereOwnerId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt wherePath($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereSeriesKey($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereSizeBytes($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereStatus($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereTransactionId($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt whereUpdatedAt($value)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt withTrashed(bool $withTrashed = true)
- * @method static \Illuminate\Database\Eloquent\Builder<static>|Receipt withoutTrashed()
+ * @method static Builder<static>|Receipt needsReview()
+ * @method static Builder<static>|Receipt newModelQuery()
+ * @method static Builder<static>|Receipt newQuery()
+ * @method static Builder<static>|Receipt onlyTrashed()
+ * @method static Builder<static>|Receipt query()
+ * @method static Builder<static>|Receipt whereCreatedAt($value)
+ * @method static Builder<static>|Receipt whereCurrentRunId($value)
+ * @method static Builder<static>|Receipt whereDeletedAt($value)
+ * @method static Builder<static>|Receipt whereDisk($value)
+ * @method static Builder<static>|Receipt whereDocType($value)
+ * @method static Builder<static>|Receipt whereDocTypeHint($value)
+ * @method static Builder<static>|Receipt whereFileHash($value)
+ * @method static Builder<static>|Receipt whereHashId($value)
+ * @method static Builder<static>|Receipt whereId($value)
+ * @method static Builder<static>|Receipt whereMime($value)
+ * @method static Builder<static>|Receipt whereOriginalFilename($value)
+ * @method static Builder<static>|Receipt whereOwnerId($value)
+ * @method static Builder<static>|Receipt wherePath($value)
+ * @method static Builder<static>|Receipt whereSeriesKey($value)
+ * @method static Builder<static>|Receipt whereSizeBytes($value)
+ * @method static Builder<static>|Receipt whereStatus($value)
+ * @method static Builder<static>|Receipt whereTransactionId($value)
+ * @method static Builder<static>|Receipt whereUpdatedAt($value)
+ * @method static Builder<static>|Receipt withTrashed(bool $withTrashed = true)
+ * @method static Builder<static>|Receipt withoutTrashed()
  *
  * @mixin \Eloquent
  */
@@ -147,5 +150,14 @@ final class Receipt extends Model
             'doc_type' => DocumentType::class,
             'doc_type_hint' => DocumentType::class,
         ];
+    }
+
+    /**
+     * @param  Builder<$this>  $query
+     */
+    #[Scope]
+    protected function needsReview(Builder $query): void
+    {
+        $query->where('status', ReceiptStatus::NeedsReview);
     }
 }

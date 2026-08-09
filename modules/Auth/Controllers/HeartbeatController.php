@@ -7,7 +7,6 @@ namespace Modules\Auth\Controllers;
 use App\Traits\ApiResponses;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\Receipt\Enums\ReceiptStatus;
 use Modules\Receipt\Models\Receipt;
 use Modules\User\Models\User;
 
@@ -21,9 +20,8 @@ final class HeartbeatController
         $user = $request->user();
 
         return $this->ok(data: [
-            'receipts_needs_review' => Receipt::query()
+            'receipts_needs_review' => Receipt::needsReview()
                 ->where('owner_id', $user->id)
-                ->where('status', ReceiptStatus::NeedsReview)
                 ->count(),
         ]);
     }

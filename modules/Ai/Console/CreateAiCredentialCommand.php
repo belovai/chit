@@ -25,6 +25,9 @@ final class CreateAiCredentialCommand extends Command
 
     protected $description = 'Store an AI API key for a user, prompting for the key itself';
 
+    /**
+     * @throws \Throwable
+     */
     public function handle(ProviderRegistry $providers, CreateAiCredential $create): int
     {
         $user = User::query()->where('email', $this->argument('email'))->first();

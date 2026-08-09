@@ -63,4 +63,18 @@ final class AiCredentialFactory extends Factory
             'last_error' => 'authentication_error: invalid x-api-key',
         ]);
     }
+
+    /**
+     * Stays active with a clean failure count: a suspended credential is held
+     * out of use by its status alone.
+     */
+    public function suspended(): self
+    {
+        return $this->state(fn (): array => [
+            'status' => CredentialStatus::Suspended,
+            'is_active' => true,
+            'failure_count' => 0,
+            'last_error' => 'billing_error: credit balance is too low',
+        ]);
+    }
 }

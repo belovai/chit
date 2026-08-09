@@ -12,9 +12,9 @@ use Modules\Ai\ValueObjects\AiUsage;
  * declares on its ModelDescriptor. An unpriced or unknown model yields 0
  * rather than throwing - a missing price row must never break processing.
  */
-final class CostCalculator
+final readonly class CostCalculator
 {
-    public function __construct(private readonly ProviderRegistry $providers) {}
+    public function __construct(private ProviderRegistry $providers) {}
 
     public function usdMicros(
         string $provider,

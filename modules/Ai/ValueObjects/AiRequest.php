@@ -23,12 +23,6 @@ final readonly class AiRequest
 
     public function hasImages(): bool
     {
-        foreach ($this->content as $part) {
-            if ($part instanceof ImagePart) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($this->content, fn ($part) => $part instanceof ImagePart);
     }
 }

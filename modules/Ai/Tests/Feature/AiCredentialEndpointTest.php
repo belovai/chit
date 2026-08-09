@@ -122,7 +122,9 @@ final class AiCredentialEndpointTest extends TestCase
                 'settings' => ['max_tokens' => 999_999, 'effort' => 'low'],
             ]))
             ->assertStatus(422)
-            ->assertJsonValidationErrorFor('settings');
+            // Reported on the setting itself, so the client can show it under
+            // the input rather than against the settings block as a whole.
+            ->assertJsonValidationErrors(['settings.max_tokens' => 'ai.setting_above_max']);
     }
 
     #[Test]
@@ -135,7 +137,7 @@ final class AiCredentialEndpointTest extends TestCase
                 'settings' => ['max_tokens' => 4000, 'effort' => 'low', 'temperature' => 2],
             ]))
             ->assertStatus(422)
-            ->assertJsonValidationErrorFor('settings');
+            ->assertJsonValidationErrors(['settings.temperature' => 'ai.setting_unknown']);
     }
 
     #[Test]
@@ -148,7 +150,7 @@ final class AiCredentialEndpointTest extends TestCase
 
         $this->withToken($token)->postJson('/api/ai/credentials', $this->payload())
             ->assertStatus(422)
-            ->assertJsonValidationErrorFor('api_key');
+            ->assertJsonValidationErrors(['api_key' => 'ai.duplicate_key']);
     }
 
     #[Test]
@@ -247,5 +249,40 @@ final class AiCredentialEndpointTest extends TestCase
 
         $this->assertSame(0, $credential->fresh()?->failure_count);
         $this->assertSame(CredentialStatus::Verified, $credential->fresh()?->status);
+    }
+
+    #[Test]
+    public function verifying_against_an_unusable_account_suspends_rather_than_disables(): void
+    {
+        FakeAiProvider::willReportUnusableOnVerification('billing_error: credit balance is too low');
+
+        $user = User::factory()->create();
+        $credential = AiCredential::factory()->for($user, 'owner')->active()->create(['model' => 'fake-model']);
+
+        $this->withToken($this->tokenFor($user))
+            ->postJson("/api/ai/credentials/{$credential->hash_id}/verify")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'suspended');
+
+        $fresh = $credential->fresh();
+
+        // The user clicked Verify before topping up: that must not cost them
+        // the credential's active flag.
+        $this->assertTrue($fresh?->is_active);
+        $this->assertSame(0, $fresh?->failure_count);
+    }
+
+    #[Test]
+    public function re_verifying_a_suspended_credential_restores_it(): void
+    {
+        $user = User::factory()->create();
+        $credential = AiCredential::factory()->for($user, 'owner')->suspended()->create(['model' => 'fake-model']);
+
+        $this->withToken($this->tokenFor($user))
+            ->postJson("/api/ai/credentials/{$credential->hash_id}/verify")
+            ->assertOk()
+            ->assertJsonPath('data.status', 'verified');
+
+        $this->assertTrue($credential->fresh()?->is_active);
     }
 }
