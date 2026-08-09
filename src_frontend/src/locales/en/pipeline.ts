@@ -3,11 +3,10 @@ export default {
   empty: 'No pipeline runs yet.',
   loadMore: 'Load more',
 
-  // Keyed by the code the API returns verbatim (see bootstrap/app.php). The
-  // `error` block below is the same text under the keys the runs screen builds
-  // itself from a step's own status.
+  // Keyed by the code the API returns verbatim (see bootstrap/app.php).
   run_not_retryable: 'This run is still going — wait for it to finish.',
   run_not_awaiting_manual: 'This run is not waiting for a decision.',
+  step_not_in_run: 'That step is not part of this run.',
 
   status: {
     queued: 'Queued',
@@ -104,11 +103,5 @@ export default {
     consumption_anomaly: 'Consumption differs sharply from previous bills',
     period_gap: 'Gap since the previous billing period',
     fake_blocker: 'Demo blocker',
-  },
-
-  error: {
-    run_not_retryable: 'This run is still going — wait for it to finish.',
-    run_not_awaiting_manual: 'This run is not waiting for a decision.',
-    step_not_in_run: 'That step is not part of this run.',
   },
 }
