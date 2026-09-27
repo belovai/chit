@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\User\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\User\Console\CreateUserCommand;
+use Modules\User\Console\ResetUserPasswordCommand;
 
 final class UserModuleServiceProvider extends ServiceProvider
 {
@@ -20,5 +22,9 @@ final class UserModuleServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
         $this->loadRoutesFrom(__DIR__.'/../Routes/api.php');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([CreateUserCommand::class, ResetUserPasswordCommand::class]);
+        }
     }
 }
