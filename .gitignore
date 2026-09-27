@@ -17,6 +17,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+CLAUDE.md
 _ide_helper.php
 Homestead.json
 Homestead.yaml
