@@ -20,6 +20,8 @@ interface AuthState {
   token: string | null
   user: User | null
   isLoading: boolean
+  // null until fetched from the backend (`REGISTRATION_ENABLED` flag).
+  registrationEnabled: boolean | null
   fieldErrors: Record<string, string[]>
   generalError: string | null
 }
@@ -29,6 +31,7 @@ export const useAuthStore = defineStore('auth', {
     token: localStorage.getItem(TOKEN_STORAGE_KEY),
     user: readStoredUser(),
     isLoading: false,
+    registrationEnabled: null,
     fieldErrors: {},
     generalError: null,
   }),
@@ -64,6 +67,18 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.isLoading = false
       }
+    },
+
+    async fetchRegistrationStatus(): Promise<boolean> {
+      if (this.registrationEnabled !== null) return this.registrationEnabled
+      try {
+        const status = await authService.registrationStatus()
+        this.registrationEnabled = status.enabled
+      } catch {
+        // Unknown state: treat as closed, the backend enforces it anyway.
+        return false
+      }
+      return this.registrationEnabled
     },
 
     async logout() {

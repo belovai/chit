@@ -37,7 +37,7 @@ export default defineComponent({
   },
 
   computed: {
-    ...mapState(useAuthStore, ['isLoading', 'fieldErrors', 'generalError']),
+    ...mapState(useAuthStore, ['isLoading', 'fieldErrors', 'generalError', 'registrationEnabled']),
 
     clientErrorCodes(): Record<string, string[]> {
       const errors: Record<string, string[]> = {}
@@ -63,8 +63,12 @@ export default defineComponent({
     },
   },
 
+  created() {
+    void this.fetchRegistrationStatus()
+  },
+
   methods: {
-    ...mapActions(useAuthStore, ['login']),
+    ...mapActions(useAuthStore, ['login', 'fetchRegistrationStatus']),
 
     fieldErrorsFor(field: string): string[] {
       const codes = this.fieldErrors[field] ?? this.clientErrorCodes[field] ?? []
@@ -133,7 +137,7 @@ export default defineComponent({
         </form>
       </AppCard>
 
-      <p class="mt-6 text-center text-[13px] text-neutral-600">
+      <p v-if="registrationEnabled" class="mt-6 text-center text-[13px] text-neutral-600">
         {{ t('auth.login.noAccount') }}
         <RouterLink :to="{ name: 'register' }" class="text-accent hover:text-accent-600">{{
           t('auth.login.registerLink')

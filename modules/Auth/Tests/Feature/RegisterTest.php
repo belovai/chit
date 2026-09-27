@@ -13,6 +13,14 @@ final class RegisterTest extends TestCase
 {
     use RefreshDatabase;
 
+    #[\Override]
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config(['auth.registration_enabled' => true]);
+    }
+
     #[Test]
     public function register_creates_user_and_returns_token(): void
     {
@@ -69,5 +77,41 @@ final class RegisterTest extends TestCase
 
         $response->assertUnprocessable();
         $response->assertJsonPath('errors.password.0', 'auth.password_too_short');
+    }
+
+    #[Test]
+    public function register_is_forbidden_when_registration_is_disabled(): void
+    {
+        config(['auth.registration_enabled' => false]);
+
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Ada Lovelace',
+            'email' => 'ada@example.com',
+            'password' => 'correct-horse-battery-staple',
+        ]);
+
+        $response->assertForbidden();
+        $response->assertJsonPath('message', 'auth.registration_disabled');
+        $this->assertDatabaseMissing('users', [
+            'email' => 'ada@example.com',
+        ]);
+    }
+
+    #[Test]
+    public function registration_status_reports_enabled(): void
+    {
+        $this->getJson('/api/auth/registration')
+            ->assertOk()
+            ->assertJsonPath('data.enabled', true);
+    }
+
+    #[Test]
+    public function registration_status_reports_disabled(): void
+    {
+        config(['auth.registration_enabled' => false]);
+
+        $this->getJson('/api/auth/registration')
+            ->assertOk()
+            ->assertJsonPath('data.enabled', false);
     }
 }

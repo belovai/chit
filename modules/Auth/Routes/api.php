@@ -7,11 +7,13 @@ use Modules\Auth\Controllers\HeartbeatController;
 use Modules\Auth\Controllers\LoginController;
 use Modules\Auth\Controllers\LogoutController;
 use Modules\Auth\Controllers\RegisterController;
+use Modules\Auth\Controllers\RegistrationStatusController;
 
 Route::middleware(['api', 'throttle:6,1'])
     ->prefix('api/auth')
     ->name('api.auth.')
     ->group(function () {
+        Route::get('registration', RegistrationStatusController::class)->name('registration');
         Route::post('register', RegisterController::class)->name('register');
         Route::post('login', LoginController::class)->name('login');
     });

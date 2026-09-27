@@ -1,5 +1,6 @@
 // Namespace also carries the auth-domain error codes the backend returns
-// (`auth.invalid_credentials`, `auth.password_too_short`) alongside view copy,
+// (`auth.invalid_credentials`, `auth.password_too_short`,
+// `auth.registration_disabled`) alongside view copy,
 // since a namespaced error code resolves as a direct translation key.
 export default {
   login: {
@@ -25,4 +26,5 @@ export default {
   password_too_short: 'Password must be at least 6 characters.',
   invalid_password: 'The password you entered is incorrect.',
   password_must_differ: 'The new password must differ from the current one.',
+  registration_disabled: 'Registration is disabled on this instance.',
 }

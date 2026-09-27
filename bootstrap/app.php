@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Modules\Ai\Exceptions\NoActiveAiCredentialException;
+use Modules\Auth\Exceptions\RegistrationDisabledException;
 use Modules\Pipeline\Exceptions\RunNotAwaitingManualException;
 use Modules\Pipeline\Exceptions\RunNotRetryableException;
 use Modules\Receipt\Exceptions\ReceiptNotAwaitingReviewException;
@@ -57,4 +58,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'data' => [],
             'status' => 422,
         ], 422));
+
+        $exceptions->render(fn (RegistrationDisabledException $e) => response()->json([
+            'message' => 'auth.registration_disabled',
+            'data' => [],
+            'status' => 403,
+        ], 403));
     })->create();

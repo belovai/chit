@@ -16,6 +16,10 @@ export interface RegisterPayload {
   password: string
 }
 
+export interface RegistrationStatus {
+  enabled: boolean
+}
+
 export interface AuthResult {
   token: string
   user: User
