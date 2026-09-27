@@ -1,5 +1,5 @@
 import { apiRequest } from '@/services/http'
-import type { AuthResult, LoginPayload, RegisterPayload } from '@/types/auth'
+import type { AuthResult, LoginPayload, RegisterPayload, RegistrationStatus } from '@/types/auth'
 import type { AuthService } from './AuthService'
 
 /**
@@ -14,6 +14,10 @@ export const tokenAuthService: AuthService = {
 
   register(payload: RegisterPayload) {
     return apiRequest<AuthResult>('/api/auth/register', { method: 'POST', body: payload })
+  },
+
+  registrationStatus() {
+    return apiRequest<RegistrationStatus>('/api/auth/registration')
   },
 
   logout(token: string) {
