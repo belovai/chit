@@ -22,17 +22,21 @@ Design intent, not to be reverse-engineered from the schema alone:
   ("how much fuel this half-year", "how much at OMV specifically", "how
   many liters") without pre-modeling categories.
 - **Multi-currency is not MVP**, but the data model must not need a
-  migration for it later (`currency` column exists on line items from the
-  start).
+  migration for it later (`currency` column exists on `transactions` from
+  the start; line items inherit it).
 - **Provider-agnostic AI layer.** Never hard-couple to one AI vendor.
-  `ReceiptExtractorInterface` → `ExtractedReceiptDTO`; Anthropic/OpenAI/local
-  (Ollama) are interchangeable implementations. Shared prompt content
+  Two layers: `Ai` (`AiProvider`/`AiClient` contracts, per-user
+  credentials, usage + cost logging) and `Extraction` (`DocumentClassifier`
+  / `DocumentExtractor` → `ExtractedReceipt` / `ExtractedBill`).
+  Anthropic/OpenAI/local (Ollama) are meant to be interchangeable providers
+  — only Anthropic is implemented so far. Shared prompt content
   (task description, few-shot examples) is provider-neutral; only the
   structured-output enforcement mechanism (tool_use, json_schema, or
   instruction+repair fallback) is provider-specific.
 - **Pending review is mandatory.** OCR+LLM extraction is never 100%
-  accurate. Raw OCR text and raw AI response are preserved for audit/debug,
-  and nothing becomes a final transaction without going through
+  accurate. Raw OCR text and raw AI response are preserved for audit/debug
+  (as pipeline artifacts), reviewer edits are recorded in
+  `receipt_corrections`, and nothing becomes a final transaction without going through
   `pending → processing → needs_review → approved/rejected`.
 - **Merchant name normalization** is a first-class concern (e.g. "OMV
   Hódmezővásárhely 2" vs "OMV Hmvhely" must resolve to the same merchant),
@@ -47,13 +51,45 @@ monorepo root, one level above this repo.
 
 ## Current state
 
-Implemented modules: `User`, `Auth`, `Merchant` (+ `MerchantLocation`).
-Not yet built: `Tag`, `Transaction`, `Receipt`, `Pipeline`, MCP server —
-see brief for their intended shape before creating them from scratch.
+Implemented modules:
 
-Frontend: IA shell in place (dashboard/receipts/transactions/settings
-nav), auth flow (login/register), i18n foundation, Merchant settings
-CRUD UI. Receipt upload/review UI does not exist yet.
+- `User`, `Auth` — account, Sanctum auth, profile/password edit, account
+  deletion with background purge.
+- `Merchant` (+ `MerchantLocation`) — fuzzy matching via `pg_trgm`,
+  address normalization for location matching.
+- `Product` — owner-scoped product catalog that line items resolve to
+  (same candidate-matching pattern as `Merchant`). Not in the original
+  brief.
+- `Transaction` — CRUD for transactions + line items (`source`:
+  `manual`/`receipt`). No query/aggregation Actions yet.
+- `Ai` — provider-agnostic AI client layer, per-user credentials
+  (verify/activate/suspend), usage and cost logging. Only the Anthropic
+  provider exists.
+- `Extraction` — stateless OCR (Tesseract) + AI classification/extraction.
+  This is what the brief called `Pipeline`.
+- `Pipeline` — stateful, generic step engine (runs, steps, artifacts,
+  gates, retry/resume/cancel) with its own API and UI. Domain-agnostic.
+- `Receipt` — upload, the `receipt_ingest` pipeline definition and its
+  steps (store, dedupe, preprocess, OCR, classify, extract, match
+  merchant/location/products, validate, review gate, create transaction),
+  review flow, corrections. Handles two document types: receipt and
+  utility bill (`series_key` links recurring bills).
+
+Not yet built: `Tag` (backend and UI — `SettingsTagsView` is a
+placeholder), query/aggregation Actions and transaction filtering,
+dashboard data (placeholder), real rate limiting on the `pipeline-ai`
+queue (only a concurrency cap today), non-Anthropic AI providers, MCP
+server, multi-currency conversion. See the brief for the intended shape
+of `Tag` before creating it.
+
+Frontend: app shell (dashboard/receipts/transactions/settings), auth,
+i18n, receipt upload + review, pipeline run list/detail, transaction
+list/detail/manual entry, settings for account, merchants (+ locations),
+products and AI credentials.
+
+Known debt: several modules still predate the current PHP conventions
+(`docs/module-conventions-migration.md`); some controllers still hold
+query logic (e.g. `TransactionController`, `HeartbeatController`).
 
 ## Architecture
 
@@ -78,10 +114,15 @@ modules/<Name>/
 Dependency direction is one-way and intentional — do not introduce
 reverse or circular dependencies between modules:
 
-`Auth → User`, `Receipt → Pipeline`, `Receipt → Transaction`,
-`Receipt → Merchant`, `Transaction → Merchant, Tag`. `Pipeline` has no
-domain dependency (image/text in, DTO out) — keep it that way so it stays
-independently testable and reusable beyond receipts.
+`Auth → User`, `Extraction → Ai`,
+`Receipt → Pipeline, Extraction, Ai, Transaction, Merchant, Product`,
+`Transaction → Merchant, Product` (and `Tag`, once it exists). Any module
+may depend on `User`. `Pipeline` and `Extraction` have no domain
+dependency — keep it that way so they stay independently testable and
+reusable beyond receipts.
+
+Known exceptions to fix, not to copy: `Auth` (`HeartbeatController`)
+reads `Receipt`, and `UserSeeder` calls into `Ai`.
 
 Scaffolding a new module: `./module-helper create <Name> [--db] [--api] [--cmd]`.
 
@@ -253,8 +294,8 @@ fresh.
 2. Don't hardcode a fixed category enum for expenses — that's the tag
    system's job.
 3. Don't couple pipeline/extraction code to one AI vendor's SDK/response
-   shape directly — go through the `ReceiptExtractorInterface` /
-   `ExtractedReceiptDTO` abstraction (once the `Pipeline` module exists).
+   shape directly — go through the `Ai` contracts and the `Extraction`
+   module (`DocumentClassifier` / `DocumentExtractor`).
 4. Preserve raw OCR text and raw AI responses when building the
    `Receipt` review flow — needed for audit/debugging hallucinated
    extractions.
